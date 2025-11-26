@@ -69,7 +69,7 @@ const App: React.FC = () => {
     return (
       <button
         onClick={() => setActiveFrequency(freq)}
-        className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap
+        className={`px-4 py-2 rounded-full text-base font-medium transition-all duration-200 whitespace-nowrap
           ${isActive 
             ? 'bg-warm-500 text-white shadow-md shadow-orange-200' 
             : 'bg-white text-stone-600 hover:bg-warm-100'
@@ -91,8 +91,8 @@ const App: React.FC = () => {
                 <Sparkles className="w-6 h-6 text-warm-600" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-warm-800 tracking-tight">KireiRoutine</h1>
-                <p className="text-xs text-warm-600 font-medium">掃除ルーティン完全表</p>
+                <h1 className="text-2xl font-bold text-warm-800 tracking-tight">KireiRoutine</h1>
+                <p className="text-sm text-warm-600 font-medium">掃除ルーティン完全表</p>
               </div>
             </div>
             <button 
@@ -119,8 +119,8 @@ const App: React.FC = () => {
         {/* Progress Section */}
         <div className="mb-8 bg-white rounded-2xl p-6 shadow-sm border border-warm-100 relative overflow-hidden">
           <div className="relative z-10">
-            <h2 className="text-2xl font-bold text-stone-800 mb-2">{activeCategory.label}</h2>
-            <p className="text-stone-500 text-sm mb-4">{activeCategory.description}</p>
+            <h2 className="text-3xl font-bold text-stone-800 mb-2">{activeCategory.label}</h2>
+            <p className="text-stone-500 text-base mb-4">{activeCategory.description}</p>
             
             <div className="flex items-center gap-4">
               <div className="flex-1 h-3 bg-stone-100 rounded-full overflow-hidden">
@@ -129,7 +129,7 @@ const App: React.FC = () => {
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className="text-warm-600 font-bold font-mono">{progress}%</span>
+              <span className="text-warm-600 font-bold font-mono text-lg">{progress}%</span>
             </div>
           </div>
           {/* Decorative background blob */}
@@ -154,7 +154,7 @@ const App: React.FC = () => {
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-warm-900/70 via-warm-900/20 to-transparent flex items-end">
-                  <h3 className="text-white font-bold text-xl px-5 py-3 drop-shadow-md tracking-wide">{section.areaName}</h3>
+                  <h3 className="text-white font-bold text-2xl px-5 py-3 drop-shadow-md tracking-wide">{section.areaName}</h3>
                 </div>
               </div>
 
@@ -176,7 +176,7 @@ const App: React.FC = () => {
                         <div className={`mt-0.5 transition-colors ${isDone ? 'text-warm-500' : 'text-stone-300 group-hover:text-warm-400'}`}>
                           {isDone ? <CheckCircle2 className="w-5 h-5 fill-warm-100" /> : <Circle className="w-5 h-5" />}
                         </div>
-                        <span className={`text-sm leading-relaxed transition-all duration-300 ${isDone ? 'text-stone-400 line-through decoration-warm-300' : 'text-stone-700'}`}>
+                        <span className={`text-lg leading-relaxed transition-all duration-300 ${isDone ? 'text-stone-400 line-through decoration-warm-300' : 'text-stone-700'}`}>
                           {task.text}
                         </span>
                       </div>
@@ -188,11 +188,11 @@ const App: React.FC = () => {
                 <div className="mt-6 pt-4 border-t border-stone-100">
                   <div className="flex items-center gap-2 mb-2 text-warm-600">
                     <Wrench className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">使用道具</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">使用道具</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {section.tools.map((tool, idx) => (
-                      <span key={idx} className="inline-block px-2.5 py-1 bg-stone-50 text-stone-600 text-[11px] rounded-md border border-stone-200 font-medium">
+                      <span key={idx} className="inline-block px-2.5 py-1 bg-stone-50 text-stone-600 text-sm rounded-md border border-stone-200 font-medium">
                         {tool}
                       </span>
                     ))}
@@ -208,7 +208,7 @@ const App: React.FC = () => {
       <footer className="max-w-4xl mx-auto px-4 mt-8 mb-4 text-center">
         <div className="bg-warm-100/50 p-4 rounded-xl inline-flex items-start gap-3 text-left max-w-2xl">
           <Info className="w-5 h-5 text-warm-600 shrink-0 mt-0.5" />
-          <div className="text-sm text-warm-900">
+          <div className="text-base text-warm-900">
             <p className="font-bold mb-1">運用のコツ</p>
             <p>まずは「週1」だけを確実に回すのを最優先にしましょう。余裕がある週に「2週間に1回」「月1」から1〜2ブロックだけ追加していくイメージでOKです。</p>
           </div>

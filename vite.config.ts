@@ -11,10 +11,18 @@ export default defineConfig({
         name: 'KireiRoutine',
         short_name: 'KireiRoutine',
         description: '掃除ルーティン完全表',
-        theme_color: '#FFDED0',
+        theme_color: '#FDEDDC',
         icons: [
-          { src: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+          {
+            src: '/icons/icon-192x192.jpeg',
+            sizes: '192x192',
+            type: 'image/jpeg',
+          },
+          {
+            src: '/icons/icon-512x512.jpeg',
+            sizes: '512x512',
+            type: 'image/jpeg',
+          },
         ],
       },
     }),
