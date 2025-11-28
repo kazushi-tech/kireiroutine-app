@@ -74,6 +74,17 @@ export const updateSectionMeta = (sectionId: string, partial: Partial<SectionMet
   saveSectionMetaMap(map);
 };
 
+export const clearNextDueDate = (sectionId: string): void => {
+  const map = loadSectionMetaMap();
+  const current = map[sectionId] || {};
+  map[sectionId] = {
+    ...current,
+    nextDueDate: null,
+    nextPlannedAt: undefined, // Clear legacy field
+  };
+  saveSectionMetaMap(map);
+};
+
 // --- Date Utilities ---
 
 export const getTodayDateString = (): string => {

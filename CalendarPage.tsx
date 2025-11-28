@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { X, Calendar } from 'lucide-react';
-import { getAllSectionMeta, formatDateForDisplay, updateSectionMeta, normalizeDateInput, getSectionMeta } from './sectionMetaStorage';
-import { SectionMetaMap, Frequency } from './types';
+import { X, Calendar, Trash2 } from 'lucide-react';
+import { getAllSectionMeta, formatDateForDisplay, updateSectionMeta, normalizeDateInput, getSectionMeta, clearNextDueDate } from './sectionMetaStorage';
+import { SectionMetaMap, Frequency, CleaningSection, SectionMeta } from './types';
 import { CLEANING_DATA } from './constants';
 import { isJpHoliday } from './src/utils/jpHolidays';
 
@@ -19,6 +19,12 @@ const CalendarPage: React.FC = () => {
   // Bulk Reschedule State
   const [isBulkRescheduleOpen, setIsBulkRescheduleOpen] = useState(false);
   const [bulkRescheduleDate, setBulkRescheduleDate] = useState('');
+
+  // Bulk Delete State
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+
+  // Delete State
+  const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
 
   useEffect(() => {
     setMetaMap(getAllSectionMeta());
@@ -139,6 +145,45 @@ const CalendarPage: React.FC = () => {
       toDate: normalized,
       count: sections.length,
     });
+    console.log('[CalendarPage] Bulk rescheduled sections', {
+      fromDate: selectedDate,
+      toDate: normalized,
+      count: sections.length,
+    });
+  };
+
+  const handleBulkDeleteConfirm = () => {
+    const sections = getSectionsForDate(selectedDate);
+    if (sections.length === 0) return;
+
+    sections.forEach((section) => {
+      clearNextDueDate(section.id);
+    });
+
+    // Refresh meta map
+    setMetaMap(getAllSectionMeta());
+    
+    // Close modal
+    setIsBulkDeleteOpen(false);
+    
+    console.log('[CalendarPage] Bulk deleted sections', {
+      date: selectedDate,
+      count: sections.length,
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!deleteSectionId) return;
+    
+    clearNextDueDate(deleteSectionId);
+    
+    // Refresh meta map
+    setMetaMap(getAllSectionMeta());
+    
+    // Close modal
+    setDeleteSectionId(null);
+    
+    console.log('[CalendarPage] Deleted schedule for section', deleteSectionId);
   };
 
   const calendarCells = useMemo(() => {
@@ -266,14 +311,24 @@ const CalendarPage: React.FC = () => {
               {new Date(selectedDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}の掃除メニュー
             </h3>
             {getSectionsForDate(selectedDate).length > 0 && (
-              <button
-                onClick={() => setIsBulkRescheduleOpen(true)}
-                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-[15px] sm:text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                <Calendar className="h-3 w-3" />
-                <span className="hidden sm:inline">この日のメニューをまとめて別日に移動</span>
-                <span className="sm:hidden">まとめて移動</span>
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <button
+                  onClick={() => setIsBulkRescheduleOpen(true)}
+                  className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-[15px] sm:text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  <Calendar className="h-3 w-3" />
+                  <span className="hidden sm:inline">この日のメニューをまとめて別日に移動</span>
+                  <span className="sm:hidden">まとめて移動</span>
+                </button>
+                <button
+                  onClick={() => setIsBulkDeleteOpen(true)}
+                  className="inline-flex items-center justify-center gap-1 rounded-full border border-red-200 px-3 py-1.5 text-[15px] sm:text-sm font-medium text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  <span className="hidden sm:inline">この日のメニューをすべて削除</span>
+                  <span className="sm:hidden">すべて削除</span>
+                </button>
+              </div>
             )}
           </div>
           
@@ -300,44 +355,18 @@ const CalendarPage: React.FC = () => {
                         const isDoneToday = meta?.lastDoneDate === selectedDate;
                         
                         return (
-                          <div
+                          <SwipeableSectionItem
                             key={section.id}
-                            className="flex flex-col gap-2 rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-100 sm:flex-row sm:items-center sm:justify-between sm:p-4"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div>
-                                <div className="text-sm font-bold text-slate-900">{section.areaName}</div>
-                                {isDoneToday && (
-                                  <span className="text-[14px] sm:text-xs font-bold text-emerald-600">
-                                    ✓ 完了済み
-                                  </span>
-                                )}
-                                {meta?.nextPlannedAt && meta.nextPlannedAt.split('T')[0] === selectedDate && (
-                                  <div className="text-[14px] sm:text-xs text-slate-500 mt-0.5">
-                                    目安: {formatDateForDisplay(meta.nextPlannedAt)}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => {
-                                  setRescheduleSectionId(section.id);
-                                  setRescheduleDate('');
-                                }}
-                                className="text-[15px] sm:text-sm text-slate-400 underline hover:text-slate-600"
-                              >
-                                別の日に移動
-                              </button>
-                              <Link
-                                to={`/section/${section.id}`}
-                                className="rounded-full bg-orange-50 px-3 py-1.5 text-[15px] sm:text-sm font-bold text-orange-600 transition hover:bg-orange-100"
-                              >
-                                詳細へ
-                              </Link>
-                            </div>
-                          </div>
+                            section={section}
+                            meta={meta}
+                            isDoneToday={isDoneToday}
+                            selectedDate={selectedDate}
+                            onReschedule={(id) => {
+                              setRescheduleSectionId(id);
+                              setRescheduleDate('');
+                            }}
+                            onDelete={(id) => setDeleteSectionId(id)}
+                          />
                         );
                       })}
                     </div>
@@ -454,7 +483,235 @@ const CalendarPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteSectionId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-xl sm:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">
+                予定を削除
+              </h3>
+              <button
+                onClick={() => setDeleteSectionId(null)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <p className="mb-6 text-sm text-slate-500">
+              この日の『{CLEANING_DATA.flatMap(c => c.sections).find(s => s.id === deleteSectionId)?.areaName}』の次回予定日を削除します。よろしいですか？
+            </p>
+            
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={() => setDeleteSectionId(null)}
+                className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="rounded-full bg-red-500 px-6 py-2 text-sm font-bold text-white shadow-md transition-colors hover:bg-red-600"
+              >
+                削除する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {isBulkDeleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-xl sm:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">
+                まとめて削除
+              </h3>
+              <button
+                onClick={() => setIsBulkDeleteOpen(false)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <p className="mb-6 text-sm text-slate-500">
+              この日に予定されているすべての掃除セクションの次回予定日を削除します。よろしいですか？
+            </p>
+            
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                onClick={() => setIsBulkDeleteOpen(false)}
+                className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleBulkDeleteConfirm}
+                className="rounded-full bg-red-500 px-6 py-2 text-sm font-bold text-white shadow-md transition-colors hover:bg-red-600"
+              >
+                すべて削除する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
+  );
+};
+
+interface SwipeableSectionItemProps {
+  section: CleaningSection;
+  meta: SectionMeta;
+  isDoneToday: boolean;
+  selectedDate: string;
+  onReschedule: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+const SwipeableSectionItem: React.FC<SwipeableSectionItemProps> = ({
+  section,
+  meta,
+  isDoneToday,
+  selectedDate,
+  onReschedule,
+  onDelete,
+}) => {
+  const [offsetX, setOffsetX] = useState(0);
+  const startX = React.useRef(0);
+  const currentX = React.useRef(0);
+  const isDragging = React.useRef(false);
+  const DELETE_BTN_WIDTH = 80;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    isDragging.current = true;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const x = e.touches[0].clientX;
+    const diff = x - startX.current;
+    
+    // Only allow swiping left (negative diff)
+    // Limit to -DELETE_BTN_WIDTH
+    // Also allow swiping back to right if already open (handled by startX logic implicitly if we reset)
+    // Actually, if we are already open (offsetX < 0), we need to account for that.
+    // But for simplicity, let's assume we start from closed or open state.
+    // A simple way: just use diff.
+    
+    // If we want to support "closing" by swiping right, we need to know initial offset.
+    // Let's keep it simple: always start drag from current visual state.
+    
+    // Better logic:
+    // We need to know the offset at the start of the drag.
+    // But `offsetX` is state.
+    // Let's just use the state `offsetX` as the base.
+    
+    // Wait, `startX` is just touch position.
+    // We need `startOffset` ref.
+  };
+  
+  // Re-implementing touch logic with startOffset
+  const startOffset = React.useRef(0);
+  
+  const onTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    startOffset.current = offsetX;
+    isDragging.current = true;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const currentTouchX = e.touches[0].clientX;
+    const diff = currentTouchX - startX.current;
+    
+    // Calculate new offset
+    let newOffset = startOffset.current + diff;
+    
+    // Constrain: max 0 (closed), min -DELETE_BTN_WIDTH (fully open)
+    // Add some resistance/overshoot if needed, but let's hard clamp for now
+    newOffset = Math.max(-DELETE_BTN_WIDTH, Math.min(0, newOffset));
+    
+    setOffsetX(newOffset);
+    currentX.current = newOffset;
+  };
+
+  const onTouchEnd = () => {
+    isDragging.current = false;
+    // Snap logic
+    if (offsetX < -DELETE_BTN_WIDTH / 2) {
+      setOffsetX(-DELETE_BTN_WIDTH);
+    } else {
+      setOffsetX(0);
+    }
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-xl bg-red-500 sm:bg-transparent">
+      {/* Background Delete Button (Mobile) */}
+      <div className="absolute inset-y-0 right-0 flex w-[80px] items-center justify-center text-white sm:hidden">
+        <button
+          onClick={() => onDelete(section.id)}
+          className="flex h-full w-full flex-col items-center justify-center gap-1 font-bold text-xs"
+        >
+          <Trash2 className="h-5 w-5" />
+          <span>削除</span>
+        </button>
+      </div>
+
+      {/* Foreground Content */}
+      <div
+        className="relative flex flex-col gap-2 bg-white p-3 shadow-sm ring-1 ring-slate-100 transition-transform duration-200 ease-out sm:flex-row sm:items-center sm:justify-between sm:p-4 sm:transform-none"
+        style={{ transform: `translateX(${offsetX}px)` }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="text-sm font-bold text-slate-900">{section.areaName}</div>
+            {isDoneToday && (
+              <span className="text-[14px] sm:text-xs font-bold text-emerald-600">
+                ✓ 完了済み
+              </span>
+            )}
+            {meta?.nextPlannedAt && meta.nextPlannedAt.split('T')[0] === selectedDate && (
+              <div className="text-[14px] sm:text-xs text-slate-500 mt-0.5">
+                目安: {formatDateForDisplay(meta.nextPlannedAt)}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onReschedule(section.id)}
+            className="text-[15px] sm:text-sm text-slate-400 underline hover:text-slate-600"
+          >
+            別の日に移動
+          </button>
+          <Link
+            to={`/section/${section.id}`}
+            className="rounded-full bg-orange-50 px-3 py-1.5 text-[15px] sm:text-sm font-bold text-orange-600 transition hover:bg-orange-100"
+          >
+            詳細へ
+          </Link>
+          
+          {/* Desktop Delete Button */}
+          <button
+            onClick={() => onDelete(section.id)}
+            className="hidden rounded-full p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 sm:block"
+            title="予定を削除"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
