@@ -28,6 +28,7 @@ export interface CleaningSection {
   tasks: CleaningTask[];
   tools: string[]; // 必要な道具リスト
   imageKey: string; // constants.tsのIMAGE_URLSに対応するキー
+  step: number; // 推奨実行順序
 }
 
 /**
@@ -39,3 +40,24 @@ export interface ScheduleCategory {
   description: string; // 説明文
   sections: CleaningSection[];
 }
+
+/**
+ * セクションごとの進捗・メモ・予定などのメタ情報
+ */
+export interface SectionMeta {
+  lastDoneAt?: string; // ISO 形式の日付 (Legacy)
+  completedSteps?: number[]; // 完了したステップの order 配列
+  memo?: string; // セクション専用メモ (Legacy)
+  nextPlannedAt?: string; // 次回実施予定日 (ISO 形式) (Legacy)
+  
+  // New fields
+  lastDoneDate?: string | null; // 'YYYY-MM-DD'
+  nextDueDate?: string | null;  // 'YYYY-MM-DD'
+  note?: string | null;         // memo
+}
+
+/**
+ * 全セクションのメタ情報を管理するマップ
+ * key: sectionId
+ */
+export type SectionMetaMap = Record<string, SectionMeta>;
