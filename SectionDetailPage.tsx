@@ -7,10 +7,7 @@ import { Frequency, SectionMeta } from './types';
 import { 
   loadSectionMetaMap, 
   saveSectionMetaMap, 
-  formatDateForDisplay,
-  updateSectionMeta,
-  getTodayDateString,
-  getNextDueDateFromToday
+  formatDateForDisplay
 } from './sectionMetaStorage';
 
 const SectionDetailPage: React.FC = () => {
@@ -53,34 +50,6 @@ const SectionDetailPage: React.FC = () => {
       return { ...prev, completedSteps: next };
     });
   };
-
-  // 完了ボタン
-  const handleCompleteSection = () => {
-    if (!manual || !sectionId) return;
-    
-    const today = getTodayDateString();
-    const nextDue = getNextDueDateFromToday(manual.frequency);
-    
-    // Update local state
-    updateMeta((prev) => {
-      const allStepOrders = manual.steps.map((s) => s.order);
-      return {
-        ...prev,
-        lastDoneAt: new Date().toISOString(), // Keep legacy field for now
-        lastDoneDate: today,
-        nextDueDate: nextDue,
-        completedSteps: allStepOrders,
-      };
-    });
-    
-    // Also use the new utility to ensure persistence (though updateMeta does it too via effect, 
-    // but let's be safe and explicit or rely on updateMeta wrapper if I changed it to use the utility?
-    // Actually updateMeta in this component uses setMeta -> useEffect -> saveSectionMetaMap.
-    // So updating state is enough.
-    // But I should also update the legacy fields if I want to keep them in sync?
-    // The user requirement says "lastDoneDate and nextDueDate are automatically updated".
-  };
-
 
 
   const manual: ManualSection | undefined =
@@ -140,7 +109,7 @@ const SectionDetailPage: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="self-start text-xs font-medium text-amber-700 underline underline-offset-2"
+          className="self-start text-sm sm:text-xs font-medium text-amber-700 underline underline-offset-2"
         >
           ← 一覧に戻る
         </button>
@@ -162,10 +131,10 @@ const SectionDetailPage: React.FC = () => {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white">
+                  <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-sm sm:text-xs font-medium text-white">
                     {manual.frequencyLabel}
                   </span>
-                  <span className="text-xs font-medium text-amber-700">
+                  <span className="text-sm sm:text-xs font-medium text-amber-700">
                     目安: {manual.durationText}
                   </span>
                 </div>
@@ -175,7 +144,7 @@ const SectionDetailPage: React.FC = () => {
               </div>
 
               {/* メタ情報ヘッダー */}
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 sm:flex-col sm:items-end sm:gap-0">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[14px] sm:text-xs text-slate-500 sm:flex-col sm:items-end sm:gap-0">
                 <span>前回: {formatDateForDisplay(meta.lastDoneDate || meta.lastDoneAt, '未実施')}</span>
                 <span>
                   次回目安: {formatDateForDisplay(meta.nextDueDate || meta.nextPlannedAt, '未定')}
@@ -183,7 +152,7 @@ const SectionDetailPage: React.FC = () => {
               </div>
             </div>
 
-            <p className="text-sm leading-relaxed text-slate-700">
+            <p className="text-[16px] sm:text-sm leading-relaxed text-slate-700">
               {manual.frequency === Frequency.Weekly
                 ? '週1ルーティンの中でも、このエリアだけを単独で回せるようにした詳細マニュアル。'
                 : `${manual.frequencyLabel}のルーティンとして、このエリアを重点的にケアするための詳細マニュアル。`}
@@ -198,7 +167,7 @@ const SectionDetailPage: React.FC = () => {
             <h2 className="mb-3 text-base font-bold text-slate-900">
               準備するもの
             </h2>
-            <ul className="list-disc space-y-1 pl-5 text-sm text-slate-800">
+            <ul className="list-disc space-y-1 pl-5 text-[16px] sm:text-sm text-slate-800">
               {manual.tools.map((tool) => (
                 <li key={tool}>{tool}</li>
               ))}
@@ -210,7 +179,7 @@ const SectionDetailPage: React.FC = () => {
               <p className="mb-2 text-base font-bold text-orange-800">
                 ざっくりイメージ
               </p>
-              <p className="text-sm leading-relaxed text-slate-800">
+              <p className="text-[16px] sm:text-sm leading-relaxed text-slate-800">
                 {manual.frequency === Frequency.Weekly
                   ? '「片付け → 表面を整える → 床・足元を仕上げる」の順に動く前提でステップを並べています。'
                   : '作業の手戻りがないよう、効率的な順序でステップを構成しています。'}
@@ -219,7 +188,7 @@ const SectionDetailPage: React.FC = () => {
             </div>
 
             {manual.notes && (
-              <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-relaxed text-slate-700">
+              <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-[16px] sm:text-sm leading-relaxed text-slate-700">
                 <p className="mb-1 font-bold text-slate-700">
                   メモ
                 </p>
@@ -236,12 +205,12 @@ const SectionDetailPage: React.FC = () => {
               <h2 className="text-sm font-semibold text-slate-900">
                 手順（チェックしながら進める想定）
               </h2>
-              <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-white">
+              <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[13px] sm:text-[10px] font-medium text-white">
                 {manual.steps.length} ステップ
               </span>
             </div>
             {manual.steps.length > 0 && (
-              <span className="text-xs font-medium text-slate-600">
+              <span className="text-[14px] sm:text-xs font-medium text-slate-600">
                 {completedSteps.length} / {manual.steps.length} (
                 {Math.round((completedSteps.length / manual.steps.length) * 100)}%)
               </span>
@@ -322,7 +291,7 @@ const SectionDetailPage: React.FC = () => {
                         )}
                       </div>
                       <p
-                        className={`text-sm leading-relaxed whitespace-pre-line ${
+                        className={`text-[17px] sm:text-sm leading-relaxed whitespace-pre-line ${
                           isChecked ? 'text-amber-800/70' : 'text-slate-700'
                         }`}
                       >
@@ -334,100 +303,6 @@ const SectionDetailPage: React.FC = () => {
               );
             })}
           </ol>
-        </section>
-
-        {/* 完了アクション & メモ */}
-        <section className="fixed bottom-0 left-0 right-0 z-10 border-t border-slate-200 bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] sm:static sm:z-auto sm:space-y-6 sm:rounded-3xl sm:border-none sm:p-6 sm:shadow-sm">
-          <div className="flex flex-col items-center gap-3 sm:border-b sm:border-slate-100 sm:pb-6">
-            <button
-              type="button"
-              onClick={handleCompleteSection}
-              className="w-full max-w-sm rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-3 text-sm font-bold text-white shadow-md transition-transform active:scale-95"
-            >
-              ✅ このセクションの掃除を完了
-            </button>
-            <p className="hidden text-xs text-slate-500 sm:block">
-              前回実施日: {formatDateForDisplay(meta.lastDoneDate || meta.lastDoneAt, '未実施')}
-            </p>
-          </div>
-
-          <div className="mt-4 grid gap-4 sm:mt-0 sm:gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-900">
-                メモ
-              </label>
-              <textarea
-                className="w-full rounded-xl border-slate-200 bg-slate-50 text-sm text-slate-800 focus:border-amber-500 focus:ring-amber-500"
-                rows={3}
-                placeholder="気になったことや次回の注意点など"
-                value={meta.note ?? meta.memo ?? ''}
-                onChange={(e) =>
-                  updateMeta((prev) => ({ ...prev, note: e.target.value, memo: e.target.value }))
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-900">
-                次にやる予定日 (目安)
-              </label>
-              <input
-                type="date"
-                className="w-full rounded-xl border-slate-200 bg-slate-50 text-sm text-slate-800 focus:border-amber-500 focus:ring-amber-500"
-                value={meta.nextDueDate ?? (meta.nextPlannedAt ? meta.nextPlannedAt.split('T')[0] : '')}
-                onChange={(e) => {
-                  const rawValue = e.target.value;
-                  console.log('[SectionDetail] nextPlannedDate change', { sectionId, rawValue });
-                  
-                  try {
-                    updateMeta((prev) => {
-                      // Normalize input
-                      if (!rawValue) {
-                        return {
-                          ...prev,
-                          nextDueDate: null,
-                          nextPlannedAt: undefined // Clear legacy field
-                        };
-                      }
-                      
-                      // Validate format YYYY-MM-DD
-                      if (!/^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
-                        console.warn('[SectionDetail] Invalid date format input', rawValue);
-                        return prev; // Do nothing if invalid
-                      }
-
-                      // Safe ISO string conversion
-                      let isoString: string | undefined;
-                      try {
-                        const d = new Date(rawValue);
-                        if (!isNaN(d.getTime())) {
-                          isoString = d.toISOString();
-                        }
-                      } catch (err) {
-                        console.error('[SectionDetail] Date conversion error', err);
-                      }
-
-                      return {
-                        ...prev,
-                        nextDueDate: rawValue,
-                        nextPlannedAt: isoString
-                      };
-                    });
-                  } catch (error) {
-                    console.error('[SectionDetail] Failed to update nextPlannedDate', error);
-                  }
-                }}
-              />
-              <p className="text-xs text-slate-500">
-                設定しておくと、一覧画面などでリマインドに使えます
-              </p>
-            </div>
-            
-            {/* モバイル用前回実施日表示 */}
-            <div className="sm:hidden text-center text-xs text-slate-500 mt-2">
-               前回実施日: {formatDateForDisplay(meta.lastDoneDate || meta.lastDoneAt, '未実施')}
-            </div>
-          </div>
         </section>
 
         {/* 戻るリンク */}

@@ -187,7 +187,7 @@ const CalendarPage: React.FC = () => {
         {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {['日', '月', '火', '水', '木', '金', '土'].map((day, i) => (
-            <div key={i} className="text-center text-xs font-bold text-slate-500 py-2">
+            <div key={i} className="text-center text-sm sm:text-xs font-bold text-slate-500 py-2">
               {day}
             </div>
           ))}
@@ -255,7 +255,7 @@ const CalendarPage: React.FC = () => {
           })}
         </div>
         
-        <div className="text-center text-xs text-slate-500 mt-2">
+        <div className="text-center text-[14px] sm:text-xs text-slate-500 mt-2">
           ※ 次回予定日（nextDueDate）に基づいて表示しています。
         </div>
 
@@ -268,7 +268,7 @@ const CalendarPage: React.FC = () => {
             {getSectionsForDate(selectedDate).length > 0 && (
               <button
                 onClick={() => setIsBulkRescheduleOpen(true)}
-                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-[15px] sm:text-sm font-medium text-slate-600 hover:bg-slate-50"
               >
                 <Calendar className="h-3 w-3" />
                 <span className="hidden sm:inline">この日のメニューをまとめて別日に移動</span>
@@ -308,12 +308,12 @@ const CalendarPage: React.FC = () => {
                               <div>
                                 <div className="text-sm font-bold text-slate-900">{section.areaName}</div>
                                 {isDoneToday && (
-                                  <span className="text-[10px] font-bold text-emerald-600">
+                                  <span className="text-[14px] sm:text-xs font-bold text-emerald-600">
                                     ✓ 完了済み
                                   </span>
                                 )}
                                 {meta?.nextPlannedAt && meta.nextPlannedAt.split('T')[0] === selectedDate && (
-                                  <div className="text-[10px] text-slate-500 mt-0.5">
+                                  <div className="text-[14px] sm:text-xs text-slate-500 mt-0.5">
                                     目安: {formatDateForDisplay(meta.nextPlannedAt)}
                                   </div>
                                 )}
@@ -326,13 +326,13 @@ const CalendarPage: React.FC = () => {
                                   setRescheduleSectionId(section.id);
                                   setRescheduleDate('');
                                 }}
-                                className="text-xs text-slate-400 underline hover:text-slate-600"
+                                className="text-[15px] sm:text-sm text-slate-400 underline hover:text-slate-600"
                               >
                                 別の日に移動
                               </button>
                               <Link
                                 to={`/section/${section.id}`}
-                                className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-600 transition hover:bg-orange-100"
+                                className="rounded-full bg-orange-50 px-3 py-1.5 text-[15px] sm:text-sm font-bold text-orange-600 transition hover:bg-orange-100"
                               >
                                 詳細へ
                               </Link>

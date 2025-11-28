@@ -183,7 +183,7 @@ const SchedulePage: React.FC = () => {
               <h1 className="text-lg font-bold leading-tight md:text-xl">
                 KireiRoutine
               </h1>
-              <p className="text-xs text-orange-700 md:text-sm">
+              <p className="text-sm sm:text-xs text-orange-700 md:text-sm">
                 掃除ルーティン完全表（かずし専用）
               </p>
             </div>
@@ -192,14 +192,14 @@ const SchedulePage: React.FC = () => {
           <div className="flex items-center justify-between gap-3 text-xs text-slate-600 md:text-sm">
             <Link
               to="/calendar"
-              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-sm sm:text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
             >
               📅 カレンダー
             </Link>
             <button
               type="button"
               onClick={handleResetProgress}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm sm:text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
             >
               <Trash2 className="h-3 w-3" />
               進捗リセット
@@ -237,7 +237,7 @@ const SchedulePage: React.FC = () => {
               <h2 className="text-sm font-semibold">
                 {frequencyLabelMap[activeFrequency]}
               </h2>
-              <p className="text-xs text-slate-600">
+              <p className="text-[16px] sm:text-sm text-slate-600">
                 メインの掃除ルール。迷ったらまずこのセクションだけ回せばOK。
               </p>
             </div>
@@ -247,7 +247,7 @@ const SchedulePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsBulkScheduleOpen(true)}
-                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:w-auto"
+                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-[15px] sm:text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:w-auto"
               >
                 <Calendar className="h-3 w-3" />
                 掃除日をまとめて設定
@@ -255,7 +255,7 @@ const SchedulePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowTodayOnly(!showTodayOnly)}
-                className={`w-full rounded-full px-4 py-2 text-xs font-bold transition-colors sm:w-auto sm:px-3 sm:py-1 ${
+                className={`w-full rounded-full px-4 py-2 text-[15px] sm:text-sm font-bold transition-colors sm:w-auto sm:px-3 sm:py-1 ${
                   showTodayOnly
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'bg-white text-slate-700 shadow-sm hover:bg-orange-50'
@@ -267,19 +267,19 @@ const SchedulePage: React.FC = () => {
               
               <div className="flex items-center justify-between gap-4 sm:justify-end">
                 <div className="text-right">
-                   <div className="text-[10px] text-slate-500">完了セクション</div>
+                   <div className="text-[14px] sm:text-xs text-slate-500">完了セクション</div>
                    <div className="text-sm font-bold text-slate-900">
                      {completedSectionsCount} / {displayedSections.length}
                    </div>
                 </div>
 
                 <div className="text-right pl-2 border-l border-slate-200">
-                  <div className="text-[10px] text-slate-500">タスク進捗</div>
+                  <div className="text-[14px] sm:text-xs text-slate-500">タスク進捗</div>
                   <div className="flex items-baseline gap-1">
                     <span className="font-semibold text-orange-600">
                       {progressPercent}%
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-[14px] sm:text-sm text-slate-500">
                       ({doneCount}/{totalCount})
                     </span>
                   </div>
@@ -294,7 +294,7 @@ const SchedulePage: React.FC = () => {
             />
           </div>
           {totalCount > 0 && doneCount === totalCount && (
-            <div className="mt-3 rounded-xl bg-orange-100 px-4 py-2 text-center text-xs font-bold text-orange-800 animate-pulse">
+            <div className="mt-3 rounded-xl bg-orange-100 px-4 py-2 text-center text-[15px] sm:text-sm font-bold text-orange-800 animate-pulse">
               🎉 {frequencyLabelMap[activeFrequency]}のルーティンはすべて完了しました。おつかれさまです！
             </div>
           )}
@@ -339,7 +339,7 @@ const SchedulePage: React.FC = () => {
                         <h3 className="text-sm font-semibold text-slate-900">
                           {section.areaName}
                         </h3>
-                        <div className="flex flex-col gap-1 text-[10px] text-slate-500 sm:text-xs">
+                        <div className="flex flex-col gap-1 text-[13px] sm:text-xs text-slate-500">
                           <span>{doneSectionTasks}/{totalSectionTasks} 件 完了</span>
                           <div className="flex flex-wrap gap-x-2 gap-y-1">
                             <span>前回: {formatDateForDisplay(meta?.lastDoneDate || meta?.lastDoneAt, '未実施')}</span>
@@ -353,7 +353,7 @@ const SchedulePage: React.FC = () => {
                       {hasManual ? (
                         <Link
                           to={`/section/${section.id}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-3 py-1.5 text-[11px] font-medium text-orange-700 hover:bg-orange-100"
+                          className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-3 py-1.5 text-xs sm:text-[11px] font-medium text-orange-700 hover:bg-orange-100"
                         >
                           <BookOpen className="h-3 w-3" />
                           {manualLabel}
@@ -375,7 +375,7 @@ const SchedulePage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleToggleTask(task.id)}
-                              className="flex w-full items-start gap-2 text-left text-xs text-slate-800"
+                              className="flex w-full items-start gap-2 text-left text-[17px] sm:text-sm text-slate-800"
                             >
                               {checked ? (
                                 <CheckCircle2 className="mt-[1px] h-4 w-4 flex-shrink-0 text-orange-500" />
@@ -393,7 +393,7 @@ const SchedulePage: React.FC = () => {
                     {section.tools && section.tools.length > 0 && (
                       <div className="mt-1 flex items-start gap-2 rounded-2xl bg-slate-50 p-2">
                         <Wrench className="mt-[2px] h-3 w-3 flex-shrink-0 text-slate-500" />
-                        <p className="text-[11px] leading-relaxed text-slate-600">
+                        <p className="text-[13px] sm:text-[11px] leading-relaxed text-slate-600">
                           最低限あると楽になる道具:
                           {' '}
                           {section.tools.join('、')}
