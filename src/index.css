@@ -1,0 +1,22 @@
+/* src/index.css */
+
+/* Tailwind v4 entry point */
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #020617; /* equivalent to bg-slate-950 */
+  color: #e5e7eb;            /* equivalent to text-slate-200 */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+}
