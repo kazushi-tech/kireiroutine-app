@@ -1,6 +1,6 @@
 // SchedulePage.tsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { CLEANING_DATA, IMAGE_URLS } from './constants';
 import { Frequency, ScheduleCategory, SectionMetaMap } from './types';
 import { loadSectionMetaMap, isDueToday, formatDateForDisplay, updateSectionMeta, normalizeDateInput } from './sectionMetaStorage';
@@ -39,9 +39,17 @@ const frequencyLabelMap: Record<Frequency, string> = CLEANING_DATA.reduce(
 );
 
 const SchedulePage: React.FC = () => {
+  const location = useLocation();
   const [activeFrequency, setActiveFrequency] = useState<Frequency>(
     Frequency.Weekly,
   );
+
+  useEffect(() => {
+    const state = location.state as { activeFrequency?: Frequency } | null;
+    if (state?.activeFrequency) {
+      setActiveFrequency(state.activeFrequency);
+    }
+  }, [location]);
   const [completedTasks, setCompletedTasks] = useState<CompletedMap>({});
   const [sectionMetaMap, setSectionMetaMap] = useState<SectionMetaMap>({});
   const [showTodayOnly, setShowTodayOnly] = useState(false);

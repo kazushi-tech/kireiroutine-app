@@ -1,39 +1,94 @@
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  useDroppable,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import React, { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { CLEANING_DATA } from "./constants";
+import { Frequency } from "./types";
 
-type RepeatMode = "once" | "weekly" | "biweekly" | "monthly";
+type RepeatType =
+  | "once"
+  | "weekly"
+  | "biweekly"
+  | "monthly"
+  | "quarterly"
+  | "semiannual"
+  | "yearly";
+
+type OnceFilter =
+  | "all"
+  | "weekly"
+  | "biweekly"
+  | "monthly"
+  | "quarterly"
+  | "semiannual"
+  | "yearly";
 
 type CalendarTask = {
   id: string;
   label: string;
   sectionLabel?: string;
+  frequency: Frequency;
+  repeatType: RepeatType;
 };
 
 type CalendarMap = Record<string, string[]>;
 
 const CALENDAR_STORAGE_KEY = "kireiroutine_calendar_v1";
 
-// TODO: 実際の manualData / metadata に合わせてここを書き換えてOK
-const ALL_TASKS: CalendarTask[] = [
-  {
-    id: "bed-make",
-    label: "ベッドを整える",
-    sectionLabel: "寝室・ベッド周り",
+const frequencyToRepeatType: Record<Frequency, RepeatType> = {
+  [Frequency.Weekly]: "weekly",
+  [Frequency.BiWeekly]: "biweekly",
+  [Frequency.Monthly]: "monthly",
+  [Frequency.Quarterly]: "quarterly",
+  [Frequency.SemiAnnual]: "semiannual",
+  [Frequency.Annual]: "yearly",
+};
+
+const CALENDAR_TASKS: CalendarTask[] = CLEANING_DATA.flatMap((category) =>
+  category.sections.flatMap((section) =>
+    section.tasks.map((task) => ({
+      id: task.id,
+      label: task.text,
+      sectionLabel: section.areaName,
+      frequency: category.frequency,
+      repeatType: frequencyToRepeatType[category.frequency],
+    }))
+  )
+);
+
+const TASK_MAP: Record<string, CalendarTask> = CALENDAR_TASKS.reduce(
+  (acc, task) => {
+    acc[task.id] = task;
+    return acc;
   },
-  {
-    id: "kitchen-counter",
-    label: "キッチンのカウンターを拭く",
-    sectionLabel: "キッチン",
-  },
-  {
-    id: "bath-mirror",
-    label: "洗面所の鏡を拭く",
-    sectionLabel: "洗面所",
-  },
-  {
-    id: "living-wiper",
-    label: "リビングの床をワイパーがけ",
-    sectionLabel: "リビング",
-  },
+  {} as Record<string, CalendarTask>
+);
+
+const REPEAT_TABS: { value: RepeatType; label: string }[] = [
+  { value: "once", label: "今日だけ" },
+  { value: "weekly", label: "毎週" },
+  { value: "biweekly", label: "2週に1回" },
+  { value: "monthly", label: "月1" },
+  { value: "quarterly", label: "3ヶ月に1回" },
+  { value: "semiannual", label: "半年に1回" },
+  { value: "yearly", label: "年1" },
 ];
 
 const today = new Date();
@@ -44,6 +99,18 @@ function formatDateKey(date: Date): string {
   const m = `${date.getMonth() + 1}`.padStart(2, "0");
   const d = `${date.getDate()}`.padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+function frequencyToLabel(freq: Frequency): string {
+  switch (freq) {
+    case Frequency.Weekly: return "週1（毎週）";
+    case Frequency.BiWeekly: return "2週に1回";
+    case Frequency.Monthly: return "月1";
+    case Frequency.Quarterly: return "3ヶ月に1回";
+    case Frequency.SemiAnnual: return "半年に1回";
+    case Frequency.Annual: return "年1";
+    default: return freq;
+  }
 }
 
 function formatDisplayDate(date: Date): string {
@@ -113,48 +180,73 @@ function buildMonthCells(year: number, month: number): DayCell[] {
   return cells;
 }
 
+function addMonthsPreserveDay(date: Date, months: number, baseDay: number) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(baseDay, lastDay));
+  return d;
+}
+
 function applyTasksWithRepeat(
   baseDate: Date,
-  mode: RepeatMode,
+  mode: RepeatType,
   taskIds: string[],
   prev: CalendarMap
 ): CalendarMap {
   const next: CalendarMap = { ...prev };
+  const limit = new Date(baseDate);
+  limit.setFullYear(limit.getFullYear() + 1);
 
-  const addForDate = (d: Date) => {
+  const addForDate = (d: Date, options?: { mergeExisting?: boolean }) => {
     const key = formatDateKey(d);
-    next[key] = [...taskIds];
+    const shouldMerge = options?.mergeExisting !== false;
+    const existing = shouldMerge ? next[key] ?? [] : [];
+    const merged = Array.from(new Set([...existing, ...taskIds]));
+    next[key] = merged;
   };
 
   if (mode === "once") {
-    addForDate(baseDate);
+    addForDate(baseDate, { mergeExisting: false });
     return next;
   }
 
-  if (mode === "weekly" || mode === "biweekly") {
-    const step = mode === "weekly" ? 7 : 14;
-    const limit = new Date(baseDate);
-    limit.setMonth(limit.getMonth() + 3); // 約3ヶ月先まで
+  const dayStep =
+    mode === "weekly" ? 7 : mode === "biweekly" ? 14 : null;
 
-    for (let d = new Date(baseDate); d <= limit; d.setDate(d.getDate() + step)) {
+  const monthStep =
+    mode === "monthly"
+      ? 1
+      : mode === "quarterly"
+      ? 3
+      : mode === "semiannual"
+      ? 6
+      : mode === "yearly"
+      ? 12
+      : null;
+
+  // まず選択日を反映
+  addForDate(baseDate, { mergeExisting: false });
+
+  if (dayStep) {
+    for (
+      let d = new Date(baseDate.getTime());
+      d <= limit;
+      d.setDate(d.getDate() + dayStep)
+    ) {
+      if (d.getTime() === baseDate.getTime()) continue;
       addForDate(new Date(d));
     }
     return next;
   }
 
-  if (mode === "monthly") {
-    const limit = new Date(baseDate);
-    limit.setMonth(limit.getMonth() + 6); // 約6ヶ月先まで
+  if (monthStep) {
+    let cursor = new Date(baseDate.getTime());
     const baseDay = baseDate.getDate();
-
-    const cursor = new Date(baseDate);
-    while (cursor <= limit) {
-      const y = cursor.getFullYear();
-      const m = cursor.getMonth();
-      const last = new Date(y, m + 1, 0).getDate();
-      const day = Math.min(baseDay, last);
-      addForDate(new Date(y, m, day));
-      cursor.setMonth(cursor.getMonth() + 1);
+    while (true) {
+      cursor = addMonthsPreserveDay(cursor, monthStep, baseDay);
+      if (cursor > limit) break;
+      addForDate(new Date(cursor));
     }
     return next;
   }
@@ -171,8 +263,13 @@ const CalendarPage: React.FC = () => {
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(today);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<RepeatMode>("once");
+  const [repeatType, setRepeatType] = useState<RepeatType>("once");
+  const [onceFilter, setOnceFilter] = useState<OnceFilter>("all");
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const navigate = useNavigate();
+  
+  // View Mode for Left Column
+  const [viewMode, setViewMode] = useState<"summary" | "agenda">("summary");
 
   // 月のセル
   const cells = useMemo(
@@ -185,9 +282,59 @@ const CalendarPage: React.FC = () => {
   const selectedKey = selectedDate ? formatDateKey(selectedDate) : todayKey;
   const tasksForSelectedDay = calendarMap[selectedKey] ?? [];
 
+  const filteredTasks = useMemo(() => {
+    if (repeatType !== "once") {
+      return CALENDAR_TASKS.filter((task) => task.repeatType === repeatType);
+    }
+    if (onceFilter === "all") return CALENDAR_TASKS;
+    return CALENDAR_TASKS.filter((task) => task.repeatType === onceFilter);
+  }, [repeatType, onceFilter]);
+
+  const filteredTaskIds = useMemo(
+    () => filteredTasks.map((task) => task.id),
+    [filteredTasks]
+  );
+
+  const allFilteredSelected =
+    filteredTaskIds.length > 0 &&
+    filteredTaskIds.every((id) => selectedTaskIds.includes(id));
+
   const selectedTasksDetail = tasksForSelectedDay
-    .map((id) => ALL_TASKS.find((t) => t.id === id))
-    .filter(Boolean) as CalendarTask[];
+    .map(
+      (id) =>
+        TASK_MAP[id] ?? ({
+          id,
+          label: id,
+          repeatType: "once",
+          frequency: Frequency.Weekly,
+        } as CalendarTask)
+    )
+    .filter(Boolean);
+
+  const upcomingDays = useMemo(() => {
+    const result: {
+      date: Date;
+      key: string;
+      tasks: CalendarTask[];
+      offset: number;
+    }[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const key = formatDateKey(d);
+      const ids = calendarMap[key] ?? [];
+      const tasks = ids
+        .map((id) => TASK_MAP[id])
+        .filter((task): task is CalendarTask => !!task && task.id !== undefined);
+      // Include all 7 days, even if they have no tasks
+      result.push({ date: d, key, tasks, offset: i });
+    }
+    return result;
+  }, [calendarMap]);
+
+  const weeklyTotalCount = useMemo(() => {
+    return upcomingDays.reduce((acc, day) => acc + day.tasks.length, 0);
+  }, [upcomingDays]);
 
   // 月送り
   const handlePrevMonth = () => {
@@ -215,8 +362,11 @@ const CalendarPage: React.FC = () => {
     const key = formatDateKey(date);
     setSelectedDate(date);
     setSelectedTaskIds(calendarMap[key] ?? []);
-    setRepeatMode("once");
+    setRepeatType("once");
+    setOnceFilter("all");
     setIsEditorOpen(true);
+    setIsRescheduleMode(false); // Reset reschedule mode
+    setRescheduleTargetDate("");
   };
 
   const handleToggleTask = (taskId: string) => {
@@ -227,13 +377,29 @@ const CalendarPage: React.FC = () => {
     );
   };
 
+  const handleToggleVisibleTasks = () => {
+    setSelectedTaskIds((prev) => {
+      if (filteredTaskIds.length === 0) return prev;
+      const hasAll = filteredTaskIds.every((id) => prev.includes(id));
+      if (hasAll) {
+        return prev.filter((id) => !filteredTaskIds.includes(id));
+      }
+      return Array.from(new Set([...prev, ...filteredTaskIds]));
+    });
+  };
+
   const handleSaveTasks = () => {
     if (!selectedDate) return;
+    const tasksToPersist =
+      repeatType === "once"
+        ? selectedTaskIds
+        : selectedTaskIds.filter((id) => filteredTaskIds.includes(id));
+
     setCalendarMap((prev) => {
       const next = applyTasksWithRepeat(
         selectedDate,
-        repeatMode,
-        selectedTaskIds,
+        repeatType,
+        tasksToPersist,
         prev
       );
       saveCalendarMap(next);
@@ -255,6 +421,45 @@ const CalendarPage: React.FC = () => {
     setIsEditorOpen(false);
   };
 
+  // Rescheduling Logic
+  const [isRescheduleMode, setIsRescheduleMode] = useState(false);
+  const [rescheduleTargetDate, setRescheduleTargetDate] = useState("");
+
+  const handleMoveTasks = () => {
+    if (!selectedDate || !rescheduleTargetDate || selectedTaskIds.length === 0) return;
+
+    const sourceKey = formatDateKey(selectedDate);
+    const targetDateObj = new Date(rescheduleTargetDate);
+    const targetKey = formatDateKey(targetDateObj);
+
+    if (sourceKey === targetKey) {
+      setIsRescheduleMode(false);
+      return;
+    }
+
+    setCalendarMap((prev) => {
+      const next = { ...prev };
+      
+      // Remove from source
+      const sourceTasks = next[sourceKey] ?? [];
+      next[sourceKey] = sourceTasks.filter(id => !selectedTaskIds.includes(id));
+      if (next[sourceKey].length === 0) delete next[sourceKey];
+
+      // Add to target
+      const targetTasks = next[targetKey] ?? [];
+      // Avoid duplicates
+      const newTargetTasks = Array.from(new Set([...targetTasks, ...selectedTaskIds]));
+      next[targetKey] = newTargetTasks;
+
+      saveCalendarMap(next);
+      return next;
+    });
+
+    setIsEditorOpen(false);
+    setIsRescheduleMode(false);
+    setRescheduleTargetDate("");
+  };
+
   // 今日にジャンプ
   const handleJumpToday = () => {
     setCurrentYear(today.getFullYear());
@@ -272,6 +477,178 @@ const CalendarPage: React.FC = () => {
     };
   }, [isEditorOpen]);
 
+  // Individual Rescheduling Logic
+  const [reschedulingTaskId, setReschedulingTaskId] = useState<string | null>(null);
+  const [individualTargetDate, setIndividualTargetDate] = useState("");
+
+  const startIndividualReschedule = (taskId: string) => {
+    setReschedulingTaskId(taskId);
+    setIndividualTargetDate(formatDateKey(selectedDate!));
+  };
+
+  const cancelIndividualReschedule = () => {
+    setReschedulingTaskId(null);
+    setIndividualTargetDate("");
+  };
+
+  const confirmIndividualReschedule = (taskId: string) => {
+    if (!selectedDate || !individualTargetDate) return;
+    
+    const sourceKey = formatDateKey(selectedDate);
+    const targetDateObj = new Date(individualTargetDate);
+    const targetKey = formatDateKey(targetDateObj);
+
+    if (sourceKey === targetKey) {
+      cancelIndividualReschedule();
+      return;
+    }
+
+    setCalendarMap((prev) => {
+      const next = { ...prev };
+      
+      // Remove from source
+      const sourceTasks = next[sourceKey] ?? [];
+      next[sourceKey] = sourceTasks.filter(id => id !== taskId);
+      if (next[sourceKey].length === 0) delete next[sourceKey];
+
+      // Add to target
+      const targetTasks = next[targetKey] ?? [];
+      // Avoid duplicates
+      if (!targetTasks.includes(taskId)) {
+        next[targetKey] = [...targetTasks, taskId];
+      }
+
+      saveCalendarMap(next);
+      return next;
+    });
+
+    // Also update selectedTaskIds if it was selected
+    if (selectedTaskIds.includes(taskId)) {
+      setSelectedTaskIds(prev => prev.filter(id => id !== taskId));
+    }
+
+    cancelIndividualReschedule();
+  };
+
+
+
+  // Frequency Summary Logic
+  const frequencySummary = useMemo(() => {
+    const summary: {
+      frequency: Frequency;
+      label: string;
+      nextDate: Date | null;
+      count: number;
+    }[] = [];
+
+    const frequencyOrder = [
+      Frequency.Weekly,
+      Frequency.BiWeekly,
+      Frequency.Monthly,
+      Frequency.Quarterly,
+      Frequency.SemiAnnual,
+      Frequency.Annual,
+    ];
+
+    frequencyOrder.forEach((freq) => {
+      let nextDate: Date | null = null;
+      let count = 0;
+
+      // Optimization: Check upcomingDays first (next 7 days)
+      const upcoming = upcomingDays.find(day => 
+        day.tasks.some(t => t.frequency === freq)
+      );
+
+      if (upcoming) {
+        nextDate = upcoming.date;
+        count = upcoming.tasks.filter(t => t.frequency === freq).length;
+      }
+
+      // If not found in upcomingDays, scan calendarMap
+      if (!nextDate) {
+         const sortedKeys = Object.keys(calendarMap).sort();
+         const futureKeys = sortedKeys.filter(k => k >= todayKey);
+         
+         for (const key of futureKeys) {
+           const taskIds = calendarMap[key] ?? [];
+            const tasksInDay = taskIds.map(id => TASK_MAP[id]).filter((task): task is CalendarTask => !!task && task.id !== undefined);
+           const hasFreq = tasksInDay.some(t => t.frequency === freq);
+           if (hasFreq) {
+             nextDate = new Date(key);
+             count = tasksInDay.filter(t => t.frequency === freq).length;
+             break;
+           }
+         }
+      }
+
+      if (nextDate) {
+        summary.push({
+          frequency: freq,
+          label: frequencyToLabel(freq),
+          nextDate,
+          count,
+        });
+      }
+    });
+
+    return summary;
+  }, [calendarMap, upcomingDays]);
+
+
+
+  const handleFrequencyClick = (freq: Frequency) => {
+    navigate("/", { state: { activeFrequency: freq } });
+  };
+
+  // DnD Logic
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const taskId = active.id as string;
+    const overId = over.id as string; // This will be the date key
+
+    let sourceDateKey = "";
+    for (const [key, tasks] of Object.entries(calendarMap)) {
+      if (tasks.includes(taskId)) {
+        sourceDateKey = key;
+        break;
+      }
+    }
+
+    if (!sourceDateKey) return;
+    if (sourceDateKey === overId) return;
+
+    setCalendarMap((prev) => {
+      const next = { ...prev };
+      
+      // Remove from source
+      next[sourceDateKey] = next[sourceDateKey].filter(id => id !== taskId);
+      if (next[sourceDateKey].length === 0) delete next[sourceDateKey];
+
+      // Add to target
+      const targetTasks = next[overId] ?? [];
+      if (!targetTasks.includes(taskId)) {
+        next[overId] = [...targetTasks, taskId];
+      }
+
+      saveCalendarMap(next);
+      return next;
+    });
+  };
+
   return (
     <main className="min-h-screen bg-slate-900 py-6 px-4 sm:px-6">
       <div className="mx-auto max-w-5xl rounded-[32px] bg-gradient-to-br from-emerald-50 to-sky-50 p-4 sm:p-6 lg:p-8 shadow-xl">
@@ -285,7 +662,13 @@ const CalendarPage: React.FC = () => {
               あなた専用の掃除ルーティン管理アプリ
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+            >
+              🏠 ホーム
+            </Link>
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white text-sm">
               K
             </span>
@@ -294,24 +677,106 @@ const CalendarPage: React.FC = () => {
 
         {/* メインレイアウト */}
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          {/* 左：今週の掃除タスク（今はプレースホルダー） */}
-          <section className="rounded-3xl bg-white/80 p-4 sm:p-6 shadow-md">
-            <div className="flex items-center justify-between">
+          {/* 左：今週の掃除タスク */}
+          <section className="rounded-3xl bg-white/80 p-4 sm:p-6 shadow-md flex flex-col h-full">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base sm:text-lg font-semibold text-slate-900">
-                  今週の掃除タスク
+                  掃除タスク
                 </h2>
                 <p className="mt-1 text-xs sm:text-sm text-slate-500">
-                  今日〜1週間以内に予定されているタスク
+                  {viewMode === "summary" ? "頻度ごとの予定サマリー" : "今日〜1週間のアジェンダ"}
                 </p>
               </div>
-              <span className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500">
-                {tasksForSelectedDay.length} Tasks
-              </span>
+              <div className="flex bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("summary")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                    viewMode === "summary"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  サマリー
+                </button>
+                <button
+                  onClick={() => setViewMode("agenda")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                    viewMode === "agenda"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  アジェンダ
+                </button>
+              </div>
             </div>
 
-            <div className="mt-6 text-xs sm:text-sm text-slate-400 text-center">
-              直近の予定はありません
+            <div className="flex-1 overflow-y-auto pr-1 -mr-2 space-y-2">
+              {viewMode === "summary" ? (
+                // Frequency Summary View
+                <div className="space-y-2">
+                  {frequencySummary.length === 0 ? (
+                    <p className="text-sm text-slate-400 py-4 text-center">予定されているタスクはありません</p>
+                  ) : (
+                    frequencySummary.map((item) => {
+                      const isToday = item.nextDate && formatDateKey(item.nextDate) === todayKey;
+                      const dateLabel = item.nextDate 
+                        ? isToday 
+                          ? "今日" 
+                          : `${item.nextDate.getMonth() + 1}/${item.nextDate.getDate()}`
+                        : "未定";
+                        
+                      return (
+                        <button
+                          key={item.frequency}
+                          onClick={() => handleFrequencyClick(item.frequency)}
+                          className="flex w-full items-center justify-between rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm hover:bg-slate-50 hover:border-emerald-200 transition-all group"
+                        >
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="text-xs font-bold text-slate-700">{item.label}</span>
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                              <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">次回</span>
+                              <span className={isToday ? "text-emerald-600 font-bold" : ""}>{dateLabel}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-semibold text-slate-800">{item.count}件</span>
+                            <span className="text-slate-300 group-hover:text-emerald-500 transition-colors">›</span>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                // Agenda View (DnD)
+                <DndContext 
+                  sensors={sensors} 
+                  collisionDetection={closestCenter} 
+                  onDragStart={handleDragStart} 
+                  onDragEnd={handleDragEnd}
+                >
+                  <div className="flex-1 overflow-y-auto pr-1 -mr-2 space-y-4">
+                    {upcomingDays.map((day) => {
+                      const isToday = day.offset === 0;
+                      return <DroppableDay key={day.key} day={day} isToday={isToday} />;
+                    })}
+                  </div>
+                  <DragOverlay>
+                    {activeId && TASK_MAP[activeId] ? <SortableTaskItem task={TASK_MAP[activeId]} isOverlay /> : null}
+                  </DragOverlay>
+                </DndContext>
+              )}
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-slate-100">
+               <div className="flex items-center justify-between text-xs text-slate-500">
+                 <span>合計: {weeklyTotalCount}件</span>
+                 <Link to="/" className="hover:text-emerald-600 hover:underline">
+                   ホームで確認 &rarr;
+                 </Link>
+               </div>
             </div>
           </section>
 
@@ -426,43 +891,14 @@ const CalendarPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 選択日の予定 */}
-            <div className="mt-6 border-t border-slate-100 pt-4">
-              <h3 className="text-sm font-semibold text-slate-800">
-                {selectedDate
-                  ? `${selectedDate.getMonth() + 1}月${selectedDate.getDate()}日の予定`
-                  : "この日の予定"}
-              </h3>
-              {selectedTasksDetail.length === 0 ? (
-                <p className="mt-2 text-xs sm:text-sm text-slate-400">
-                  予定はありません
-                </p>
-              ) : (
-                <ul className="mt-2 space-y-1.5 text-xs sm:text-sm text-slate-700">
-                  {selectedTasksDetail.map((task) => (
-                    <li key={task.id} className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span>
-                        {task.sectionLabel && (
-                          <span className="text-slate-400 mr-1">
-                            [{task.sectionLabel}]
-                          </span>
-                        )}
-                        {task.label}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
           </section>
         </div>
       </div>
 
       {/* ボトムシート：タスク編集 */}
       {isEditorOpen && selectedDate && (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/40 px-4 pb-4 sm:items-center sm:px-0">
-          <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-white shadow-xl">
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/40 px-4 pb-4 sm:items-center sm:px-0 animate-fade-in">
+          <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-white shadow-xl max-h-[85vh] flex flex-col overflow-hidden animate-slide-up">
             {/* ヘッダー */}
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-6">
               <div>
@@ -483,104 +919,252 @@ const CalendarPage: React.FC = () => {
               </button>
             </div>
 
-            {/* 繰り返し */}
-            <div className="px-4 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-0">
-              <p className="text-xs font-medium text-slate-700 mb-2">
-                繰り返し
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {[
-                  { mode: "once", label: "今日だけ" },
-                  { mode: "weekly", label: "毎週" },
-                  { mode: "biweekly", label: "2週に1回" },
-                  { mode: "monthly", label: "月1" },
-                ].map((item) => {
-                  const active = repeatMode === item.mode;
-                  return (
-                    <button
-                      key={item.mode}
-                      type="button"
-                      onClick={() =>
-                        setRepeatMode(item.mode as RepeatMode)
-                      }
-                      className={`rounded-full border px-3 py-1.5 ${
-                        active
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold"
-                          : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  );
-                })}
+            {/* 繰り返し (Only show if not rescheduling individual task to keep UI clean) */}
+            {!reschedulingTaskId && (
+              <div className="px-4 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-0">
+                <p className="text-xs font-medium text-slate-700 mb-2">
+                  繰り返し
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  {REPEAT_TABS.map((item) => {
+                    const active = repeatType === item.value;
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => {
+                          setRepeatType(item.value);
+                          if (item.value !== "once") setOnceFilter("all");
+                        }}
+                        className={`rounded-full border px-3 py-1.5 transition-colors ${
+                          active
+                            ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold shadow-[0_0_0_1px_rgba(16,185,129,0.15)]"
+                            : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* 今日だけ用サブフィルタ */}
+            {!reschedulingTaskId && repeatType === "once" && (
+              <div className="px-4 sm:px-6 mt-2">
+                <div className="flex flex-wrap gap-2 text-[11px] sm:text-xs">
+                  {[
+                    { value: "all", label: "全て" },
+                    { value: "weekly", label: "週1" },
+                    { value: "biweekly", label: "2週に1回" },
+                    { value: "monthly", label: "月1" },
+                    { value: "quarterly", label: "3ヶ月に1回" },
+                    { value: "semiannual", label: "半年に1回" },
+                    { value: "yearly", label: "年1" },
+                  ].map((chip) => {
+                    const active = onceFilter === chip.value;
+                    return (
+                      <button
+                        key={chip.value}
+                        type="button"
+                        onClick={() => setOnceFilter(chip.value as OnceFilter)}
+                        className={`rounded-full border px-3 py-1 transition ${
+                          active
+                            ? "bg-emerald-500 text-white border-emerald-500 shadow"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        {chip.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* タスク一覧 */}
-            <div className="mt-3 max-h-72 overflow-y-auto border-t border-slate-100 px-4 py-3 sm:px-6">
-              {ALL_TASKS.length === 0 ? (
+            <div className="mt-3 flex-1 overflow-y-auto max-h-[55vh] sm:max-h-[55vh] border-t border-slate-100 px-4 py-3 sm:px-6">
+              {filteredTasks.length === 0 ? (
                 <p className="text-xs text-slate-400">
                   まだ掃除タスクが登録されていません。
                 </p>
               ) : (
-                <ul className="space-y-2">
-                  {ALL_TASKS.map((task) => {
-                    const checked = selectedTaskIds.includes(task.id);
-                    return (
-                      <li
-                        key={task.id}
-                        className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-3 py-2"
+                <>
+                  {!reschedulingTaskId && (
+                    <div className="mb-2 flex items-center justify-between gap-2 text-[11px] sm:text-xs">
+                      <button
+                        type="button"
+                        onClick={handleToggleVisibleTasks}
+                        className={`rounded-full border px-3 py-1 font-medium transition ${
+                          allFilteredSelected
+                            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                        }`}
                       >
-                        <div className="flex flex-col">
-                          {task.sectionLabel && (
-                            <span className="text-[11px] text-slate-400">
-                              {task.sectionLabel}
-                            </span>
-                          )}
-                          <span className="text-xs sm:text-sm text-slate-800">
-                            {task.label}
-                          </span>
-                        </div>
-                        <label className="inline-flex items-center gap-1">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
-                            checked={checked}
-                            onChange={() => handleToggleTask(task.id)}
-                          />
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
+                        この頻度のタスクをまとめて選択
+                      </button>
+                      <span className="text-slate-400">
+                        {filteredTaskIds.filter((id) =>
+                          selectedTaskIds.includes(id)
+                        ).length}
+                        /{filteredTasks.length} 選択中
+                      </span>
+                    </div>
+                  )}
+                  <ul className="space-y-2">
+                    {filteredTasks.map((task) => {
+                      const checked = selectedTaskIds.includes(task.id);
+                      const isRescheduling = reschedulingTaskId === task.id;
+
+                      if (isRescheduling) {
+                        return (
+                          <li key={task.id} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+                            <div className="flex flex-col gap-2">
+                              <span className="text-sm font-semibold text-slate-800">{task.label}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-500">移動先:</span>
+                                <input 
+                                  type="date" 
+                                  className="flex-1 rounded-lg border-slate-300 text-sm py-1 px-2"
+                                  value={individualTargetDate}
+                                  onChange={(e) => setIndividualTargetDate(e.target.value)}
+                                />
+                              </div>
+                              <div className="flex justify-end gap-2 mt-1">
+                                <button 
+                                  onClick={cancelIndividualReschedule}
+                                  className="px-3 py-1 text-xs text-slate-500 hover:bg-slate-200 rounded-full"
+                                >
+                                  キャンセル
+                                </button>
+                                <button 
+                                  onClick={() => confirmIndividualReschedule(task.id)}
+                                  className="px-3 py-1 text-xs bg-emerald-500 text-white font-bold rounded-full hover:bg-emerald-600 shadow-sm"
+                                >
+                                  移動確定
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      }
+
+                      return (
+                        <li
+                          key={task.id}
+                          className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-3 py-2 group hover:border-emerald-200 transition-colors"
+                        >
+                          <div className="flex flex-col flex-1">
+                            {task.sectionLabel && (
+                              <span className="text-[11px] text-slate-400">
+                                {task.sectionLabel}
+                              </span>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs sm:text-sm text-slate-800">
+                                {task.label}
+                              </span>
+                              {!reschedulingTaskId && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startIndividualReschedule(task.id);
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-white border border-slate-200 rounded-md px-1.5 py-0.5 text-slate-400 hover:text-emerald-600 hover:border-emerald-200 flex items-center gap-1"
+                                  title="日付を変更"
+                                >
+                                  📅 <span className="hidden sm:inline">変更</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <label className="inline-flex items-center gap-1">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
+                              checked={checked}
+                              onChange={() => handleToggleTask(task.id)}
+                            />
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
               )}
             </div>
 
             {/* フッター */}
-            <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <button
-                type="button"
-                onClick={handleClearDay}
-                className="text-xs text-slate-400 underline-offset-2 hover:underline"
-              >
-                この日の予定をすべて削除
-              </button>
-              <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsEditorOpen(false)}
-                  className="w-full rounded-full border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:w-auto"
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveTasks}
-                  className="w-full rounded-full bg-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-md hover:bg-emerald-600 sm:w-auto"
-                >
-                  この日の掃除タスクを保存
-                </button>
-              </div>
+            <div className="border-t border-slate-100 px-4 py-3 sm:px-6 bg-white">
+              {isRescheduleMode ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700">選択したタスクの移動先:</span>
+                    <button 
+                      onClick={() => setIsRescheduleMode(false)}
+                      className="text-xs text-slate-400 hover:text-slate-600"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      className="flex-1 rounded-lg border-slate-200 text-sm"
+                      value={rescheduleTargetDate}
+                      onChange={(e) => setRescheduleTargetDate(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleMoveTasks}
+                      disabled={!rescheduleTargetDate}
+                      className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      一括移動
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={handleClearDay}
+                      className="text-xs text-red-400 hover:text-red-500 hover:underline"
+                    >
+                      全削除
+                    </button>
+                  </div>
+                  <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
+                     {selectedTaskIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsRescheduleMode(true)}
+                        className="text-xs font-medium text-slate-500 hover:text-emerald-600 transition-colors"
+                      >
+                        選択分を移動...
+                      </button>
+                    )}
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditorOpen(false)}
+                        className="flex-1 sm:flex-none rounded-full border border-slate-200 px-5 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        キャンセル
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveTasks}
+                        className="flex-1 sm:flex-none rounded-full bg-emerald-500 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-600 transition-all hover:shadow-lg active:scale-95"
+                      >
+                        保存
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -588,5 +1172,88 @@ const CalendarPage: React.FC = () => {
     </main>
   );
 };
+
+// Sortable Task Item Component
+function SortableTaskItem({ task, isOverlay = false }: { task: CalendarTask; isOverlay?: boolean }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id, data: { task } });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 999 : "auto",
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm shadow-sm cursor-grab active:cursor-grabbing touch-none ${
+        isOverlay
+          ? "bg-emerald-50 border-emerald-200 rotate-2 scale-105"
+          : "bg-white border-slate-100 hover:border-emerald-200"
+      }`}
+    >
+      <span className="text-xs sm:text-sm text-slate-700 truncate flex-1">
+        {task.label}
+      </span>
+      <span className="text-slate-300">:::</span>
+    </div>
+  );
+}
+
+// Droppable Day Component
+
+function DroppableDay({ day, isToday }: { day: any; isToday: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: day.key,
+  });
+
+  const dateLabel = isToday
+    ? "今日"
+    : day.offset === 1
+    ? "明日"
+    : ["日", "月", "火", "水", "木", "金", "土"][day.date.getDay()] + "曜";
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-2xl border p-3 transition-colors ${
+        isOver ? "bg-emerald-50 border-emerald-300 ring-2 ring-emerald-200" : 
+        isToday ? "bg-emerald-50/30 border-emerald-100" : "bg-white border-slate-100"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className={`text-xs font-bold ${isToday ? "text-emerald-600" : "text-slate-500"}`}>
+          {dateLabel} <span className="text-[10px] font-normal text-slate-400 ml-1">{day.date.getMonth()+1}/{day.date.getDate()}</span>
+        </span>
+        <span className="text-[10px] text-slate-400">{day.tasks.length}件</span>
+      </div>
+      
+      <SortableContext items={day.tasks.map((t: any) => t.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-2 min-h-[20px]">
+          {day.tasks.length === 0 ? (
+            <div className="text-[10px] text-slate-300 text-center py-2 border-dashed border border-slate-100 rounded">
+              タスクなし
+            </div>
+          ) : (
+            day.tasks.map((task: any) => (
+              <SortableTaskItem key={task.id} task={task} />
+            ))
+          )}
+        </div>
+      </SortableContext>
+    </div>
+  );
+}
 
 export default CalendarPage;
