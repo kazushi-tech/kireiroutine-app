@@ -5,7 +5,9 @@ import {
   List, 
   ChevronLeft, 
   ChevronRight, 
-  Check, 
+  Check,
+  CheckCircle2,
+  Circle,
   Calendar as CalendarIcon,
   Trash2,
   X,
@@ -24,12 +26,24 @@ import { isJpHoliday } from './src/utils/jpHolidays';
 // UI用の型定義
 type UIFrequency = 'daily' | 'weekly' | 'monthly';
 
+// localStorage key for selected tasks
+const SELECTED_TASKS_KEY = 'kireiRoutine_selectedTasks';
+
 const CalendarPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [metaMap, setMetaMap] = useState<SectionMetaMap>({});
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
+  
+  // Task completion tracking (deprecated - using selectedTasksByDate instead)
+  const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
+  
+  // Bottom sheet state
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  
+  // Selected tasks by date (for localStorage persistence)
+  const [selectedTasksByDate, setSelectedTasksByDate] = useState<Record<string, string[]>>({});
   
   // Reschedule State
   const [rescheduleSectionId, setRescheduleSectionId] = useState<string | null>(null);
@@ -45,8 +59,29 @@ const CalendarPage: React.FC = () => {
   // Delete State
   const [deleteSectionId, setDeleteSectionId] = useState<string | null>(null);
 
+  // localStorage helper functions
+  const loadSelectedTasksFromStorage = (): Record<string, string[]> => {
+    try {
+      const saved = localStorage.getItem(SELECTED_TASKS_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      console.error('Failed to load selected tasks', e);
+      return {};
+    }
+  };
+
+  const saveSelectedTasksToStorage = (data: Record<string, string[]>) => {
+    try {
+      localStorage.setItem(SELECTED_TASKS_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.error('Failed to save selected tasks', e);
+    }
+  };
+
   useEffect(() => {
     setMetaMap(getAllSectionMeta());
+    // Load selected tasks from localStorage
+    setSelectedTasksByDate(loadSelectedTasksFromStorage());
   }, []);
 
   const FREQUENCY_SHORT_LABELS: Record<Frequency, string> = {
@@ -85,6 +120,23 @@ const CalendarPage: React.FC = () => {
     }
     return sections;
   };
+
+  // Helper to get tasks for selected date with section metadata
+  const getTasksForSelectedDate = useMemo(() => {
+    const sections = getSectionsForDate(selectedDate);
+    const selectedTasks = selectedTasksByDate[selectedDate] || [];
+    
+    return sections.flatMap(section => {
+      return section.tasks.map(task => ({
+        ...task,
+        sectionId: section.id,
+        sectionName: section.areaName,
+        frequency: section.frequency,
+        imageKey: section.imageKey,
+        isSelected: selectedTasks.includes(task.id),
+      }));
+    });
+  }, [selectedDate, metaMap, selectedTasksByDate]);
 
   // Helper to get sections due within the next 7 days (including today and overdue)
   const getWeeklyTasks = () => {
@@ -228,6 +280,48 @@ const CalendarPage: React.FC = () => {
     // Close modal
     setDeleteSectionId(null);
   };
+
+  const handleTaskComplete = (sectionId: string, taskId: string, currentlyDone: boolean) => {
+    // Toggle task completion in local state
+    setCompletedTasks(prev => ({
+      ...prev,
+      [taskId]: !currentlyDone,
+    }));
+
+    // If marking as done, update section's lastDoneDate
+    if (!currentlyDone) {
+      const todayStr = getTodayDateString();
+      updateSectionMeta(sectionId, {
+        lastDoneDate: todayStr,
+      });
+      
+      // Refresh meta map
+      setMetaMap(getAllSectionMeta());
+    }
+  };
+
+  // Handler for task toggle in bottom sheet
+  const handleTaskToggleInBottomSheet = (taskId: string) => {
+    const currentTasks = selectedTasksByDate[selectedDate] || [];
+    const newTasks = currentTasks.includes(taskId)
+      ? currentTasks.filter(id => id !== taskId)
+      : [...currentTasks, taskId];
+    
+    const newData = {
+      ...selectedTasksByDate,
+      [selectedDate]: newTasks,
+    };
+    
+    setSelectedTasksByDate(newData);
+    saveSelectedTasksToStorage(newData);
+  };
+
+  // Handler to open bottom sheet when date is clicked
+  const handleDateClick = (dateStr: string) => {
+    setSelectedDate(dateStr);
+    setIsBottomSheetOpen(true);
+  };
+
 
   const calendarCells = useMemo(() => {
     const cells = [];
@@ -450,12 +544,15 @@ const CalendarPage: React.FC = () => {
                     const sections = getSectionsForDate(cell.dateStr);
                     const isToday = cell.dateStr === getTodayDateString();
                     const hasTask = sections.length > 0;
+                    const hasSelectedTasks = (selectedTasksByDate[cell.dateStr] || []).length > 0;
                     const isSelected = cell.dateStr === selectedDate;
 
                     let cellClass = "aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 text-[11px] transition-all cursor-pointer hover:scale-105 relative";
                     
                     if (isToday) {
                         cellClass += " bg-emerald-500 text-white shadow-md shadow-emerald-300 font-bold";
+                    } else if (hasSelectedTasks) {
+                        cellClass += " bg-emerald-300 text-emerald-900 border border-emerald-400 font-semibold";
                     } else if (hasTask) {
                         cellClass += " bg-emerald-100 text-emerald-800 border border-emerald-200 font-medium";
                     } else {
@@ -472,7 +569,7 @@ const CalendarPage: React.FC = () => {
                         <div 
                             key={index} 
                             className={cellClass}
-                            onClick={() => setSelectedDate(cell.dateStr)}
+                            onClick={() => handleDateClick(cell.dateStr)}
                         >
                             <span>{cell.day}</span>
                         </div>
@@ -481,10 +578,14 @@ const CalendarPage: React.FC = () => {
               </div>
 
               {/* Legend */}
-              <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-500">
+              <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-500 flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm"></div>
                   <span>今日</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-emerald-300 border border-emerald-400"></div>
+                  <span>タスク選択済み</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-emerald-100 border border-emerald-200"></div>
@@ -521,32 +622,44 @@ const CalendarPage: React.FC = () => {
                     )}
                  </div>
 
-                 {getSectionsForDate(selectedDate).length > 0 ? (
-                     <div className="space-y-2">
-                         {getSectionsForDate(selectedDate).map(section => (
-                             <div key={section.id} className="flex items-center justify-between bg-slate-50 p-2 rounded-xl">
-                                 <div className="flex items-center gap-2">
-                                     <div className="bg-white p-1.5 rounded-lg text-slate-500 shadow-sm">
-                                         {getIconForSection(section.imageKey)}
+                 {getTasksForSelectedDate.length > 0 ? (
+                     <div className="space-y-3">
+                         {getTasksForSelectedDate.map(task => (
+                             <div 
+                               key={task.id} 
+                               className={`flex items-start gap-3 bg-slate-50 p-3 rounded-xl transition-all ${
+                                 task.isDone ? 'opacity-60' : ''
+                               }`}
+                             >
+                                 <button
+                                   onClick={() => handleTaskComplete(task.sectionId, task.id, task.isDone)}
+                                   className="flex-shrink-0 mt-0.5"
+                                 >
+                                   {task.isDone ? (
+                                     <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                   ) : (
+                                     <Circle className="w-5 h-5 text-slate-300 hover:text-emerald-400" />
+                                   )}
+                                 </button>
+                                 
+                                 <div className="flex-1 min-w-0">
+                                   <div className="flex items-start justify-between gap-2">
+                                     <div className="flex-1">
+                                       <div className="flex items-center gap-2 mb-1">
+                                         <div className="bg-white p-1 rounded text-slate-500 shadow-sm">
+                                           {getIconForSection(task.imageKey)}
+                                         </div>
+                                         <span className="text-[11px] font-medium text-slate-500">
+                                           {task.sectionName}
+                                         </span>
+                                       </div>
+                                       <p className={`text-sm text-slate-700 leading-relaxed ${
+                                         task.isDone ? 'line-through text-slate-400' : ''
+                                       }`}>
+                                         {task.text}
+                                       </p>
                                      </div>
-                                     <span className="text-xs font-medium text-slate-700">{section.areaName}</span>
-                                 </div>
-                                 <div className="flex items-center gap-1">
-                                     <button 
-                                        onClick={() => {
-                                            setRescheduleSectionId(section.id);
-                                            setRescheduleDate('');
-                                        }}
-                                        className="p-1.5 text-slate-400 hover:text-slate-600"
-                                     >
-                                         <CalendarIcon className="w-3 h-3" />
-                                     </button>
-                                     <button 
-                                        onClick={() => setDeleteSectionId(section.id)}
-                                        className="p-1.5 text-slate-400 hover:text-red-500"
-                                     >
-                                         <Trash2 className="w-3 h-3" />
-                                     </button>
+                                   </div>
                                  </div>
                              </div>
                          ))}
@@ -559,6 +672,98 @@ const CalendarPage: React.FC = () => {
 
         </main>
       </div>
+
+      {/* Bottom Sheet Modal for Task Selection */}
+      {isBottomSheetOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsBottomSheetOpen(false)}
+        >
+          <div 
+            className="w-full max-w-2xl bg-white rounded-t-3xl shadow-2xl max-h-[80vh] flex flex-col animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">
+                {new Date(selectedDate).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}の掃除タスク
+              </h3>
+              <button
+                onClick={() => setIsBottomSheetOpen(false)}
+                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Task List */}
+            <div className="flex-1 overflow-y-auto p-5">
+              {getTasksForSelectedDate.length > 0 ? (
+                <div className="space-y-3">
+                  {getTasksForSelectedDate.map(task => (
+                    <label
+                      key={task.id}
+                      className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                        task.isSelected
+                          ? 'bg-emerald-50 border-emerald-300'
+                          : 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={task.isSelected}
+                        onChange={() => handleTaskToggleInBottomSheet(task.id)}
+                        className="mt-1 w-5 h-5 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="bg-white p-1.5 rounded-lg text-slate-500 shadow-sm border border-slate-100">
+                            {getIconForSection(task.imageKey)}
+                          </div>
+                          <span className="text-sm font-semibold text-slate-700">
+                            {task.sectionName}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${getFrequencyStyles(task.frequency)}`}>
+                            {getFrequencyLabel(task.frequency)}
+                          </span>
+                        </div>
+                        <p className={`text-sm leading-relaxed ${
+                          task.isSelected ? 'text-slate-700' : 'text-slate-600'
+                        }`}>
+                          {task.text}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-slate-400 text-sm">この日に予定されているタスクはありません</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {getTasksForSelectedDate.length > 0 && (
+              <div className="px-5 py-4 border-t border-slate-100 bg-slate-50">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">
+                    選択中: <span className="font-bold text-emerald-600">
+                      {(selectedTasksByDate[selectedDate] || []).length} / {getTasksForSelectedDate.length}
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => setIsBottomSheetOpen(false)}
+                    className="px-6 py-2 bg-emerald-500 text-white rounded-full font-bold hover:bg-emerald-600 transition-colors shadow-sm"
+                  >
+                    完了
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modals (Reschedule, Delete, etc.) */}
       {/* Per-Section Reschedule Modal */}
