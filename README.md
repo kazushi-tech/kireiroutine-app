@@ -4,7 +4,7 @@
 
 # KireiRoutine - 掃除ルーティン管理アプリ
 
-掃除のルーティンを頻度別（週1、月1など）に管理できるアプリケーションです。
+掃除のルーティンを頻度別（週 1、月 1 など）に管理できるアプリケーションです。
 
 View your app in AI Studio: https://ai.studio/apps/drive/18lQn0w7miTqFAq6JP2j1UsPt1occY_eO
 
@@ -15,10 +15,21 @@ View your app in AI Studio: https://ai.studio/apps/drive/18lQn0w7miTqFAq6JP2j1Us
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
+**Prerequisites:** Node.js
 
 1. Install dependencies:
    `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Deployment (Netlify)
+
+This project is configured for automatic deployment to Netlify.
+
+### Build Settings
+
+- **Build command:** `npm run build`
+- **Publish directory:** `dist`
+
+When you push changes to the repository, Netlify will automatically build and deploy the new version.

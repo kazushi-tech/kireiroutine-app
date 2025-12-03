@@ -493,3 +493,45 @@ export const CLEANING_DATA: ScheduleCategory[] = [
     ]
   }
 ];
+
+export type FrequencyId = Frequency;
+
+export const FREQUENCY_SUMMARY_META: Record<
+  Frequency,
+  {
+    label: string;
+    shortDescription: string;
+    examples: string;
+  }
+> = {
+  [Frequency.Weekly]: {
+    label: '週1（毎週）',
+    shortDescription: 'ベッド・キッチン・トイレなど、生活の土台になる“メイン掃除”',
+    examples: '例：ベッド周り、キッチン台、トイレ床 など',
+  },
+  [Frequency.BiWeekly]: {
+    label: '2週に1回',
+    shortDescription: '排水口や換気扇など、ちょっと重めで忘れがちな“中ボス掃除”',
+    examples: '例：お風呂・キッチンの排水口、レンジフード表面 など',
+  },
+  [Frequency.Monthly]: {
+    label: '月1',
+    shortDescription: '床拭きや窓まわりなど、少し気合いがいる“リセット掃除”',
+    examples: '例：床の水拭き、窓のサッシ、冷蔵庫内の拭き掃除 など',
+  },
+  [Frequency.Quarterly]: {
+    label: '3ヶ月に1回',
+    shortDescription: 'フィルター系や見えないところの“裏ボス掃除”',
+    examples: '例：エアコンフィルター、ベッド下のほこり など',
+  },
+  [Frequency.SemiAnnual]: {
+    label: '半年に1回',
+    shortDescription: '大物家電や収納の“ガッツリ入れ替え掃除”',
+    examples: '例：クローゼットの中身整理、キッチン収納の全部出し など',
+  },
+  [Frequency.Annual]: {
+    label: '年1',
+    shortDescription: '年末大掃除クラスの“総力戦掃除”',
+    examples: '例：ベランダ全体、換気扇の分解掃除 など',
+  },
+};

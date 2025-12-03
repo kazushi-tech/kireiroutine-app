@@ -40,16 +40,20 @@ const frequencyLabelMap: Record<Frequency, string> = CLEANING_DATA.reduce(
 
 const SchedulePage: React.FC = () => {
   const location = useLocation();
+  const state = location.state as { initialFrequency?: Frequency; activeFrequency?: Frequency } | null;
+
+  // 優先順位: state.initialFrequency > state.activeFrequency > Frequency.Weekly
   const [activeFrequency, setActiveFrequency] = useState<Frequency>(
-    Frequency.Weekly,
+    state?.initialFrequency ?? state?.activeFrequency ?? Frequency.Weekly
   );
 
   useEffect(() => {
-    const state = location.state as { activeFrequency?: Frequency } | null;
-    if (state?.activeFrequency) {
+    if (state?.initialFrequency) {
+      setActiveFrequency(state.initialFrequency);
+    } else if (state?.activeFrequency) {
       setActiveFrequency(state.activeFrequency);
     }
-  }, [location]);
+  }, [state]);
   const [completedTasks, setCompletedTasks] = useState<CompletedMap>({});
   const [sectionMetaMap, setSectionMetaMap] = useState<SectionMetaMap>({});
   const [showTodayOnly, setShowTodayOnly] = useState(false);

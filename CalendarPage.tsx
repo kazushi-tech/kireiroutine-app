@@ -19,7 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CLEANING_DATA } from "./constants";
+import { CLEANING_DATA, FREQUENCY_SUMMARY_META } from "./constants";
 import { Frequency } from "./types";
 
 type RepeatType =
@@ -102,15 +102,7 @@ function formatDateKey(date: Date): string {
 }
 
 function frequencyToLabel(freq: Frequency): string {
-  switch (freq) {
-    case Frequency.Weekly: return "週1（毎週）";
-    case Frequency.BiWeekly: return "2週に1回";
-    case Frequency.Monthly: return "月1";
-    case Frequency.Quarterly: return "3ヶ月に1回";
-    case Frequency.SemiAnnual: return "半年に1回";
-    case Frequency.Annual: return "年1";
-    default: return freq;
-  }
+  return FREQUENCY_SUMMARY_META[freq]?.label ?? freq;
 }
 
 function formatDisplayDate(date: Date): string {
@@ -530,6 +522,34 @@ const CalendarPage: React.FC = () => {
     cancelIndividualReschedule();
   };
 
+  const handleQuickMove = (taskId: string, days: number) => {
+    if (!selectedDate) return;
+    const sourceKey = formatDateKey(selectedDate);
+    
+    // Calculate target date
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + days);
+    const targetKey = formatDateKey(d);
+
+    setCalendarMap((prev) => {
+      const next = { ...prev };
+      
+      // Remove from source
+      const sourceTasks = next[sourceKey] ?? [];
+      next[sourceKey] = sourceTasks.filter(id => id !== taskId);
+      if (next[sourceKey].length === 0) delete next[sourceKey];
+
+      // Add to target
+      const targetTasks = next[targetKey] ?? [];
+      if (!targetTasks.includes(taskId)) {
+        next[targetKey] = [...targetTasks, taskId];
+      }
+
+      saveCalendarMap(next);
+      return next;
+    });
+  };
+
 
 
   // Frequency Summary Logic
@@ -554,7 +574,7 @@ const CalendarPage: React.FC = () => {
       let nextDate: Date | null = null;
       let count = 0;
 
-      // Optimization: Check upcomingDays first (next 7 days)
+      // 1. Check upcomingDays first (next 7 days)
       const upcoming = upcomingDays.find(day => 
         day.tasks.some(t => t.frequency === freq)
       );
@@ -564,14 +584,14 @@ const CalendarPage: React.FC = () => {
         count = upcoming.tasks.filter(t => t.frequency === freq).length;
       }
 
-      // If not found in upcomingDays, scan calendarMap
+      // 2. If not found in upcomingDays, scan future keys in calendarMap
       if (!nextDate) {
          const sortedKeys = Object.keys(calendarMap).sort();
          const futureKeys = sortedKeys.filter(k => k >= todayKey);
          
          for (const key of futureKeys) {
            const taskIds = calendarMap[key] ?? [];
-            const tasksInDay = taskIds.map(id => TASK_MAP[id]).filter((task): task is CalendarTask => !!task && task.id !== undefined);
+           const tasksInDay = taskIds.map(id => TASK_MAP[id]).filter((task): task is CalendarTask => !!task && task.id !== undefined);
            const hasFreq = tasksInDay.some(t => t.frequency === freq);
            if (hasFreq) {
              nextDate = new Date(key);
@@ -581,10 +601,14 @@ const CalendarPage: React.FC = () => {
          }
       }
 
-      if (nextDate) {
+      // Always add the frequency item, even if no next date (user might want to see it)
+      // But per requirement "next date" is key. If no tasks, maybe skip?
+      // The requirement says "Frequency Summary Card... Next Date... Count".
+      // Let's include it even if count is 0, or maybe just if defined in META.
+      if (FREQUENCY_SUMMARY_META[freq]) {
         summary.push({
           frequency: freq,
-          label: frequencyToLabel(freq),
+          label: FREQUENCY_SUMMARY_META[freq].label,
           nextDate,
           count,
         });
@@ -597,7 +621,7 @@ const CalendarPage: React.FC = () => {
 
 
   const handleFrequencyClick = (freq: Frequency) => {
-    navigate("/", { state: { activeFrequency: freq } });
+    navigate("/", { state: { initialFrequency: freq } });
   };
 
   // DnD Logic
@@ -715,58 +739,59 @@ const CalendarPage: React.FC = () => {
             <div className="flex-1 overflow-y-auto pr-1 -mr-2 space-y-2">
               {viewMode === "summary" ? (
                 // Frequency Summary View
-                <div className="space-y-2">
-                  {frequencySummary.length === 0 ? (
-                    <p className="text-sm text-slate-400 py-4 text-center">予定されているタスクはありません</p>
-                  ) : (
-                    frequencySummary.map((item) => {
-                      const isToday = item.nextDate && formatDateKey(item.nextDate) === todayKey;
-                      const dateLabel = item.nextDate 
-                        ? isToday 
-                          ? "今日" 
-                          : `${item.nextDate.getMonth() + 1}/${item.nextDate.getDate()}`
-                        : "未定";
-                        
-                      return (
-                        <button
-                          key={item.frequency}
-                          onClick={() => handleFrequencyClick(item.frequency)}
-                          className="flex w-full items-center justify-between rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm hover:bg-slate-50 hover:border-emerald-200 transition-all group"
-                        >
-                          <div className="flex flex-col items-start gap-1">
-                            <span className="text-xs font-bold text-slate-700">{item.label}</span>
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
-                              <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">次回</span>
-                              <span className={isToday ? "text-emerald-600 font-bold" : ""}>{dateLabel}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-semibold text-slate-800">{item.count}件</span>
-                            <span className="text-slate-300 group-hover:text-emerald-500 transition-colors">›</span>
-                          </div>
-                        </button>
-                      );
-                    })
-                  )}
+                <div className="space-y-3">
+                  {frequencySummary.map((item) => (
+                    <FrequencySummaryCard
+                      key={item.frequency}
+                      frequencyId={item.frequency}
+                      nextDate={item.nextDate}
+                      taskCount={item.count}
+                      onClick={() => handleFrequencyClick(item.frequency)}
+                    />
+                  ))}
                 </div>
               ) : (
                 // Agenda View (DnD)
-                <DndContext 
-                  sensors={sensors} 
-                  collisionDetection={closestCenter} 
-                  onDragStart={handleDragStart} 
-                  onDragEnd={handleDragEnd}
-                >
-                  <div className="flex-1 overflow-y-auto pr-1 -mr-2 space-y-4">
-                    {upcomingDays.map((day) => {
-                      const isToday = day.offset === 0;
-                      return <DroppableDay key={day.key} day={day} isToday={isToday} />;
-                    })}
-                  </div>
-                  <DragOverlay>
-                    {activeId && TASK_MAP[activeId] ? <SortableTaskItem task={TASK_MAP[activeId]} isOverlay /> : null}
-                  </DragOverlay>
-                </DndContext>
+                // Agenda View (List)
+                <div className="flex-1 overflow-y-auto pr-1 -mr-2 space-y-4">
+                  {upcomingDays.map((day) => {
+                    const isToday = day.offset === 0;
+                    // Count by frequency
+                    const byFreq: Record<string, number> = {};
+                    day.tasks.forEach(t => {
+                      byFreq[t.frequency] = (byFreq[t.frequency] || 0) + 1;
+                    });
+                    
+                    return (
+                      <div key={day.key} className={`rounded-2xl border p-3 ${isToday ? "bg-emerald-50/30 border-emerald-100" : "bg-white border-slate-100"}`}>
+                         <div className="flex items-center justify-between mb-2">
+                          <span className={`text-xs font-bold ${isToday ? "text-emerald-600" : "text-slate-700"}`}>
+                            {isToday ? "今日" : day.offset === 1 ? "明日" : `${day.date.getMonth() + 1}/${day.date.getDate()} (${["日", "月", "火", "水", "木", "金", "土"][day.date.getDay()]})`}
+                          </span>
+                          <span className="text-[10px] text-slate-400">{day.tasks.length}件</span>
+                        </div>
+                        
+                        {day.tasks.length === 0 ? (
+                          <div className="text-[10px] text-slate-300 text-center py-2 border-dashed border border-slate-100 rounded">
+                            予定なし
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            {Object.entries(byFreq).map(([freq, count]) => {
+                              const f = freq as Frequency;
+                              return (
+                                <div key={freq} className="flex items-center justify-between text-[11px] text-slate-600 px-2 py-1 bg-slate-50 rounded">
+                                  <span>{FREQUENCY_SUMMARY_META[f]?.label ?? f}</span>
+                                  <span className="font-medium">{count}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
             
@@ -1078,6 +1103,40 @@ const CalendarPage: React.FC = () => {
                                 </button>
                               )}
                             </div>
+                            {!reschedulingTaskId && (
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuickMove(task.id, 1);
+                                  }}
+                                  className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 hover:text-emerald-600 hover:border-emerald-200"
+                                  title="明日へ移動"
+                                >
+                                  +1日
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuickMove(task.id, 7);
+                                  }}
+                                  className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 hover:text-emerald-600 hover:border-emerald-200"
+                                  title="来週へ移動"
+                                >
+                                  +1週
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startIndividualReschedule(task.id);
+                                  }}
+                                  className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 hover:text-emerald-600 hover:border-emerald-200"
+                                  title="日付を指定して移動"
+                                >
+                                  移動...
+                                </button>
+                              </div>
+                            )}
                           </div>
                           <label className="inline-flex items-center gap-1">
                             <input
@@ -1257,3 +1316,68 @@ function DroppableDay({ day, isToday }: { day: any; isToday: boolean }) {
 }
 
 export default CalendarPage;
+
+function formatNextLabel(nextDate: Date | null): string {
+  if (!nextDate) return '予定なし';
+  const today = new Date();
+
+  const isToday =
+    nextDate.getFullYear() === today.getFullYear() &&
+    nextDate.getMonth() === today.getMonth() &&
+    nextDate.getDate() === today.getDate();
+
+  if (isToday) return '今日';
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const isTomorrow =
+    nextDate.getFullYear() === tomorrow.getFullYear() &&
+    nextDate.getMonth() === tomorrow.getMonth() &&
+    nextDate.getDate() === tomorrow.getDate();
+
+  if (isTomorrow) return '明日';
+
+  return `${nextDate.getMonth() + 1}/${nextDate.getDate()}`;
+}
+
+type FrequencySummaryProps = {
+  frequencyId: Frequency;
+  nextDate: Date | null;
+  taskCount: number;
+  onClick: () => void;
+};
+
+function FrequencySummaryCard({
+  frequencyId,
+  nextDate,
+  taskCount,
+  onClick,
+}: FrequencySummaryProps) {
+  const meta = FREQUENCY_SUMMARY_META[frequencyId];
+  if (!meta) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-xl border border-slate-200 bg-white/80 p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-50 hover:shadow-md group"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1">
+          <p className="text-xs font-semibold text-slate-700">{meta.label}</p>
+          <p className="mt-1 text-[11px] leading-snug text-slate-500">
+            {meta.shortDescription}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] text-slate-400">次回</p>
+          <p className={`text-sm font-semibold ${nextDate && formatNextLabel(nextDate) === '今日' ? 'text-emerald-600' : 'text-slate-900'}`}>
+            {formatNextLabel(nextDate)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-500">{taskCount}件</p>
+        </div>
+      </div>
+      <p className="mt-1 text-[10px] text-slate-400 group-hover:text-slate-500 transition-colors">{meta.examples}</p>
+    </button>
+  );
+}
