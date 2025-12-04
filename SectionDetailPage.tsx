@@ -16,6 +16,10 @@ const SectionDetailPage: React.FC = () => {
 
   const [meta, setMeta] = React.useState<SectionMeta>({});
   const [metaMapLoaded, setMetaMapLoaded] = React.useState(false);
+  
+  // View Mode for steps display
+  type ViewMode = 'full' | 'compact';
+  const [viewMode, setViewMode] = React.useState<ViewMode>('full');
 
   // 初回ロード
   React.useEffect(() => {
@@ -225,11 +229,37 @@ const SectionDetailPage: React.FC = () => {
                 style={{
                   width: `${Math.round(
                     (completedSteps.length / manual.steps.length) * 100
-                  )}%`,
+      )}%`,
                 }}
               />
             </div>
           )}
+          
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-2 rounded-xl bg-white border border-slate-200 p-1 w-fit">
+            <button
+              type="button"
+              onClick={() => setViewMode('full')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                viewMode === 'full'
+                  ? 'bg-orange-500 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              解説あり
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('compact')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                viewMode === 'compact'
+                  ? 'bg-orange-500 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              チェックリストだけ
+            </button>
+          </div>
 
           <ol className="space-y-3">
             {manual.steps.map((step) => {
@@ -290,13 +320,15 @@ const SectionDetailPage: React.FC = () => {
                           </h3>
                         )}
                       </div>
-                      <p
-                        className={`text-[17px] sm:text-sm leading-relaxed whitespace-pre-line ${
-                          isChecked ? 'text-amber-800/70' : 'text-slate-700'
-                        }`}
-                      >
-                        {step.description}
-                      </p>
+                      {viewMode === 'full' && (
+                        <p
+                          className={`text-[17px] sm:text-sm leading-relaxed whitespace-pre-line ${
+                            isChecked ? 'text-amber-800/70' : 'text-slate-700'
+                          }`}
+                        >
+                          {step.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </li>

@@ -1,9 +1,15 @@
 // SchedulePage.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { CLEANING_DATA, IMAGE_URLS } from './constants';
 import { Frequency, ScheduleCategory, SectionMetaMap } from './types';
 import { loadSectionMetaMap, isDueToday, formatDateForDisplay, updateSectionMeta, normalizeDateInput } from './sectionMetaStorage';
+import HeroSection from './src/components/HeroSection';
+import FlowSection from './src/components/FlowSection';
+import FrequencyInfoSection from './src/components/FrequencyInfoSection';
+import TodayTasksSection from './src/components/TodayTasksSection';
+import CollapsibleSection from './src/components/CollapsibleSection';
+import FrequencyOverviewSection from './src/components/FrequencyOverviewSection';
 import {
   Sparkles,
   CheckCircle2,
@@ -38,9 +44,65 @@ const frequencyLabelMap: Record<Frequency, string> = CLEANING_DATA.reduce(
   {} as Record<Frequency, string>,
 );
 
+// 頻度ごとの表示データ定義
+const frequencyDisplayData: Record<Frequency, { title: string; description: string; imageSrc: string; imageAlt: string }> = {
+  [Frequency.Weekly]: {
+    title: '週1（毎週）のメイン掃除',
+    description: '迷ったらここだけやればOKのメインルール。ベッド・キッチン・トイレなど、生活の土台になる場所を週1で整えます。',
+    imageSrc: '/images/branding-kirei-frequency-weekly.jpeg',
+    imageAlt: '週1のメイン掃除のインフォグラフィック',
+  },
+  [Frequency.BiWeekly]: {
+    title: '2週間に1回のちょい重め掃除',
+    description: '週1の掃除にプラスして、汚れがたまりやすい場所をリセットする日。キッチン・浴室・トイレ・玄関を2週間に1回まとめてリフレッシュ。',
+    imageSrc: '/images/branding-kirei-frequency-biweekly.jpeg',
+    imageAlt: '2週間に1回のちょい重め掃除のインフォグラフィック',
+  },
+  [Frequency.Monthly]: {
+    title: '月1のリセット＆ニオイ対策',
+    description: '月末の最終土曜日などにまとめて実行する想定。リセット＆におい対策で、月に1回しっかり整えます。',
+    imageSrc: '/images/branding-kirei-frequency-monthly.jpeg',
+    imageAlt: '月1のリセット＆ニオイ対策のインフォグラフィック',
+  },
+  [Frequency.Quarterly]: {
+    title: '3ヶ月に1回のプチ大掃除',
+    description: 'カビ・油・ホコリを根こそぎリセットするタイミング。季節の変わり目に3ヶ月に1回、しっかり掃除します。',
+    imageSrc: '/images/branding-kirei-frequency-quarterly.jpeg',
+    imageAlt: '3ヶ月に1回のプチ大掃除のインフォグラフィック',
+  },
+  [Frequency.SemiAnnual]: {
+    title: '半年に1回の中規模リセット',
+    description: '模様替え・断捨離も絡めた中規模リセット。半年に1回、大きな掃除をして気分をリフレッシュ。',
+    imageSrc: '/images/branding-kirei-frequency-semiannual.jpeg',
+    imageAlt: '半年に1回の中規模リセットのインフォグラフィック',
+  },
+  [Frequency.Annual]: {
+    title: '年1の大掃除クラス',
+    description: '年末の大掃除シーズンなど、2〜3時間かけて一気にやるイメージ。年に1回、しっかり大掃除します。',
+    imageSrc: '/images/branding-kirei-frequency-annual.jpeg',
+    imageAlt: '年1の大掃除クラスのインフォグラフィック',
+  },
+};
+
 const SchedulePage: React.FC = () => {
   const location = useLocation();
   const state = location.state as { initialFrequency?: Frequency; activeFrequency?: Frequency } | null;
+  const tabsRef = useRef<HTMLElement>(null);
+
+  const handleStartClick = () => {
+    setActiveFrequency(Frequency.Weekly);
+    setTimeout(() => {
+      tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  const handleViewTodayTasks = () => {
+    setActiveFrequency(Frequency.Weekly);
+    setShowTodayOnly(true);
+    setTimeout(() => {
+      tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
 
   // 優先順位: state.initialFrequency > state.activeFrequency > Frequency.Weekly
   const [activeFrequency, setActiveFrequency] = useState<Frequency>(
@@ -188,8 +250,12 @@ const SchedulePage: React.FC = () => {
         {/* header */}
         <header className="flex flex-col gap-3 border-b border-orange-100 pb-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-orange-400 to-amber-500 text-white shadow-sm">
-              <Sparkles className="h-5 w-5" />
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-orange-400 to-amber-500 text-white shadow-sm overflow-hidden border border-orange-200">
+              <img 
+                src="/branding-kirei-mascot.jpeg" 
+                alt="Mascot" 
+                className="h-full w-full object-cover"
+              />
             </div>
             <div>
               <h1 className="text-lg font-bold leading-tight md:text-xl">
@@ -219,8 +285,45 @@ const SchedulePage: React.FC = () => {
           </div>
         </header>
 
+        <HeroSection onStartClick={handleStartClick} />
+        
+        <TodayTasksSection 
+          sectionMetaMap={sectionMetaMap}
+          onViewTodayTasks={handleViewTodayTasks}
+        />
+        
+        <CollapsibleSection
+          title="KireiRoutine の流れ"
+          subtitle=""
+          storageKey="kireiRoutine-flow-section-open"
+          defaultOpen={true}
+        >
+          <div className="flex justify-center">
+            <img
+              src="/branding-kirei-flow-steps.jpeg"
+              alt="KireiRoutine Flow Steps"
+              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain"
+            />
+          </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="掃除のタイプ"
+          subtitle=""
+          storageKey="kireiRoutine-frequency-section-open"
+          defaultOpen={true}
+        >
+          <div className="flex justify-center">
+            <img
+              src="/images/branding-kirei-frequency-weekly.jpeg"
+              alt="掃除のタイプのインフォグラフィック"
+              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain"
+            />
+          </div>
+        </CollapsibleSection>
+
         {/* frequency tabs */}
-        <section className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <section ref={tabsRef} className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {frequencyOrder.map((freq) => {
             const label = frequencyLabelMap[freq];
             if (!label) return null;
@@ -360,7 +463,16 @@ const SchedulePage: React.FC = () => {
           )}
         </section>
 
-        {/* sections */}
+        {/* 頻度別インフォグラフィック - 横並びレイアウト */}
+        {displayedSections.length > 0 && (
+          <FrequencyOverviewSection
+            title={frequencyDisplayData[activeFrequency].title}
+            description={frequencyDisplayData[activeFrequency].description}
+            imageSrc={frequencyDisplayData[activeFrequency].imageSrc}
+            imageAlt={frequencyDisplayData[activeFrequency].imageAlt}
+          />
+        )}
+
         {/* sections */}
         {displayedSections.length > 0 ? (
           <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -428,7 +540,7 @@ const SchedulePage: React.FC = () => {
 
                     {/* tasks */}
                     <ul className="space-y-2">
-                      {section.tasks.map((task) => {
+                      {section.tasks.slice(0, 3).map((task) => {
                         const checked = !!completedTasks[task.id];
                         return (
                           <li key={task.id}>
@@ -447,6 +559,21 @@ const SchedulePage: React.FC = () => {
                           </li>
                         );
                       })}
+                      {section.tasks.length > 3 && (
+                        <li className="pt-1">
+                          <div className="flex items-center justify-between text-xs text-slate-500">
+                            <span>...他 {section.tasks.length - 3} 件のタスク</span>
+                            {hasManual && (
+                              <Link
+                                to={`/section/${section.id}`}
+                                className="text-orange-600 hover:text-orange-700 font-medium hover:underline"
+                              >
+                                詳細を見る →
+                              </Link>
+                            )}
+                          </div>
+                        </li>
+                      )}
                     </ul>
 
                     {/* tools hint */}

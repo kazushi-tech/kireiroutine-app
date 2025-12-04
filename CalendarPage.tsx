@@ -262,6 +262,11 @@ const CalendarPage: React.FC = () => {
   
   // View Mode for Left Column
   const [viewMode, setViewMode] = useState<"summary" | "agenda">("summary");
+  
+  // Bulk Assign Mode
+  const [isBulkAssignMode, setIsBulkAssignMode] = useState(false);
+  const [bulkFrequencyId, setBulkFrequencyId] = useState<Frequency | null>(null);
+  const [bulkSelectedDates, setBulkSelectedDates] = useState<Set<string>>(new Set());
 
   // 月のセル
   const cells = useMemo(
@@ -352,6 +357,22 @@ const CalendarPage: React.FC = () => {
   const handleSelectDay = (date: Date | null) => {
     if (!date) return;
     const key = formatDateKey(date);
+    
+    // If in bulk assign mode, toggle date selection
+    if (isBulkAssignMode) {
+      setBulkSelectedDates(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(key)) {
+          newSet.delete(key);
+        } else {
+          newSet.add(key);
+        }
+        return newSet;
+      });
+      return;
+    }
+    
+    // Normal mode: open modal
     setSelectedDate(date);
     setSelectedTaskIds(calendarMap[key] ?? []);
     setRepeatType("once");
@@ -550,7 +571,44 @@ const CalendarPage: React.FC = () => {
     });
   };
 
+  // Bulk Assign Mode Functions
+  const handleStartBulkAssign = (freq: Frequency) => {
+    setIsBulkAssignMode(true);
+    setBulkFrequencyId(freq);
+    setBulkSelectedDates(new Set());
+  };
 
+  const handleCancelBulkAssign = () => {
+    setIsBulkAssignMode(false);
+    setBulkFrequencyId(null);
+    setBulkSelectedDates(new Set());
+  };
+
+  const handleBulkAssign = () => {
+    if (!bulkFrequencyId || bulkSelectedDates.size === 0) return;
+    
+    // Get all task IDs for this frequency
+    const tasksForFrequency = CALENDAR_TASKS.filter(
+      task => task.frequency === bulkFrequencyId
+    ).map(task => task.id);
+    
+    setCalendarMap(prev => {
+      const next = { ...prev };
+      
+      // Add tasks to each selected date
+      bulkSelectedDates.forEach(dateKey => {
+        const existing = next[dateKey] ?? [];
+        // Merge and deduplicate
+        next[dateKey] = Array.from(new Set([...existing, ...tasksForFrequency]));
+      });
+      
+      saveCalendarMap(next);
+      return next;
+    });
+    
+    // Reset bulk mode
+    handleCancelBulkAssign();
+  };
 
   // Frequency Summary Logic
   const frequencySummary = useMemo(() => {
@@ -747,6 +805,11 @@ const CalendarPage: React.FC = () => {
                       nextDate={item.nextDate}
                       taskCount={item.count}
                       onClick={() => handleFrequencyClick(item.frequency)}
+                      onBulkAssignClick={(e) => {
+                        e.stopPropagation();
+                        handleStartBulkAssign(item.frequency);
+                      }}
+                      isBulkActive={isBulkAssignMode && bulkFrequencyId === item.frequency}
                     />
                   ))}
                 </div>
@@ -847,6 +910,18 @@ const CalendarPage: React.FC = () => {
             <div className="mt-4 flex items-center justify-center text-sm font-semibold text-slate-700">
               {headerText}
             </div>
+            
+            {/* Bulk Assign Mode Banner */}
+            {isBulkAssignMode && bulkFrequencyId && (
+              <div className="mt-3 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-center">
+                <p className="text-sm font-semibold text-emerald-800">
+                  📅 {FREQUENCY_SUMMARY_META[bulkFrequencyId]?.label}のタスクを一括登録中
+                </p>
+                <p className="mt-1 text-xs text-emerald-600">
+                  カレンダーから日付をタップして選択してください
+                </p>
+              </div>
+            )}
 
             {/* 曜日ヘッダー */}
             <div className="mt-3 grid grid-cols-7 text-center text-[11px] sm:text-xs font-medium text-slate-400">
@@ -870,12 +945,15 @@ const CalendarPage: React.FC = () => {
                 const key = cell.key;
                 const isToday = key === todayKey;
                 const hasTasks = (calendarMap[key] ?? []).length > 0;
+                const isSelected = isBulkAssignMode && bulkSelectedDates.has(key);
 
                 let baseClasses =
                   "flex h-8 sm:h-9 lg:h-10 items-center justify-center rounded-2xl cursor-pointer text-xs sm:text-sm transition-colors";
                 let colorClasses = "";
 
-                if (isToday && hasTasks) {
+                if (isSelected) {
+                  colorClasses = "bg-emerald-200 text-emerald-900 border-2 border-emerald-500";
+                } else if (isToday && hasTasks) {
                   colorClasses = "bg-emerald-500 text-white";
                 } else if (hasTasks) {
                   colorClasses = "bg-emerald-100 text-emerald-900";
@@ -915,6 +993,48 @@ const CalendarPage: React.FC = () => {
                 <span>タスクなし</span>
               </div>
             </div>
+            
+            {/* Bulk Assign Mode Footer */}
+            {isBulkAssignMode && bulkFrequencyId && (
+              <div className="mt-4 rounded-xl bg-white border border-emerald-200 p-3">
+                <div className="flex flex-col gap-2">
+                  <div className="text-xs text-slate-600">
+                    <span className="font-semibold">選択中:</span>{' '}
+                    {bulkSelectedDates.size === 0 ? (
+                      <span className="text-slate-400">日付を選択してください</span>
+                    ) : (
+                      <span>
+                        {Array.from(bulkSelectedDates)
+                          .sort()
+                          .map(dateKey => {
+                            const d = new Date(dateKey);
+                            return `${d.getMonth() + 1}/${d.getDate()}`;
+                          })
+                          .join(', ')}
+                        {' '}({bulkSelectedDates.size}日)
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCancelBulkAssign}
+                      className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBulkAssign}
+                      disabled={bulkSelectedDates.size === 0}
+                      className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      選択した日に{FREQUENCY_SUMMARY_META[bulkFrequencyId]?.label}のタスクを登録
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </section>
         </div>
@@ -1345,6 +1465,8 @@ type FrequencySummaryProps = {
   nextDate: Date | null;
   taskCount: number;
   onClick: () => void;
+  onBulkAssignClick: (e: React.MouseEvent) => void;
+  isBulkActive?: boolean;
 };
 
 function FrequencySummaryCard({
@@ -1352,32 +1474,48 @@ function FrequencySummaryCard({
   nextDate,
   taskCount,
   onClick,
+  onBulkAssignClick,
+  isBulkActive = false,
 }: FrequencySummaryProps) {
   const meta = FREQUENCY_SUMMARY_META[frequencyId];
   if (!meta) return null;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full rounded-xl border border-slate-200 bg-white/80 p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-50 hover:shadow-md group"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1">
-          <p className="text-xs font-semibold text-slate-700">{meta.label}</p>
-          <p className="mt-1 text-[11px] leading-snug text-slate-500">
-            {meta.shortDescription}
-          </p>
+    <div className={`w-full rounded-xl border bg-white/80 p-3 shadow-sm transition ${isBulkActive ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-slate-200'}`}>
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full text-left transition hover:-translate-y-0.5 group"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-slate-700">{meta.label}</p>
+            <p className="mt-1 text-[11px] leading-snug text-slate-500">
+              {meta.shortDescription}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-slate-400">次回</p>
+            <p className={`text-sm font-semibold ${nextDate && formatNextLabel(nextDate) === '今日' ? 'text-emerald-600' : 'text-slate-900'}`}>
+              {formatNextLabel(nextDate)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-500">{taskCount}件</p>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-[10px] text-slate-400">次回</p>
-          <p className={`text-sm font-semibold ${nextDate && formatNextLabel(nextDate) === '今日' ? 'text-emerald-600' : 'text-slate-900'}`}>
-            {formatNextLabel(nextDate)}
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-500">{taskCount}件</p>
-        </div>
-      </div>
-      <p className="mt-1 text-[10px] text-slate-400 group-hover:text-slate-500 transition-colors">{meta.examples}</p>
-    </button>
+        <p className="mt-1 text-[10px] text-slate-400 group-hover:text-slate-500 transition-colors">{meta.examples}</p>
+      </button>
+      
+      <button
+        type="button"
+        onClick={onBulkAssignClick}
+        className={`mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+          isBulkActive
+            ? 'bg-emerald-500 text-white shadow-sm'
+            : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+        }`}
+      >
+        {isBulkActive ? '📅 選択中... (キャンセルはカレンダー下部から)' : '📅 一括登録'}
+      </button>
+    </div>
   );
 }
