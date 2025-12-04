@@ -323,7 +323,7 @@ const SchedulePage: React.FC = () => {
         </CollapsibleSection>
 
         {/* frequency tabs */}
-        <section ref={tabsRef} className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <section ref={tabsRef} className="flex flex-wrap items-center gap-2 pb-2">
           {frequencyOrder.map((freq) => {
             const label = frequencyLabelMap[freq];
             if (!label) return null;
@@ -333,7 +333,7 @@ const SchedulePage: React.FC = () => {
                 key={freq}
                 type="button"
                 onClick={() => setActiveFrequency(freq)}
-                className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium transition ${
+                className={`flex-shrink-0 rounded-full px-5 py-2.5 text-sm font-medium transition ${
                   isActive
                     ? 'bg-orange-500 text-white shadow-sm'
                     : 'bg-white text-slate-700 hover:bg-orange-50'
@@ -343,134 +343,40 @@ const SchedulePage: React.FC = () => {
               </button>
             );
           })}
+          
+          {/* フィルター・設定ボタン */}
+          <div className="flex gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={() => setIsBulkScheduleOpen(true)}
+              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+            >
+              <Calendar className="h-4 w-4" />
+              まとめて設定
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTodayOnly(!showTodayOnly)}
+              className={`rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
+                showTodayOnly
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'bg-white text-slate-700 shadow-sm hover:bg-orange-50'
+              }`}
+            >
+              {showTodayOnly ? '絞り込み中' : '今日のみ'}
+            </button>
+          </div>
         </section>
 
-        {/* Mobile-only brief description */}
-        <div className="md:hidden text-sm text-slate-600 px-2">
-          {activeCategory?.description}
-        </div>
-
-        {/* progress & filter - Desktop only full version */}
-        <section className="hidden md:block rounded-2xl bg-white/80 p-4 shadow-sm">
-          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-sm font-semibold">
-                {frequencyLabelMap[activeFrequency]}
-              </h2>
-              <p className="text-[16px] sm:text-sm text-slate-600">
-                {activeCategory?.description}
-              </p>
-            </div>
-            
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <button
-                type="button"
-                onClick={() => setIsBulkScheduleOpen(true)}
-                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-[15px] sm:text-sm font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 sm:w-auto"
-              >
-                <Calendar className="h-3 w-3" />
-                掃除日をまとめて設定
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowTodayOnly(!showTodayOnly)}
-                className={`w-full rounded-full px-4 py-2 text-[15px] sm:text-sm font-bold transition-colors sm:w-auto sm:px-3 sm:py-1 ${
-                  showTodayOnly
-                    ? 'bg-orange-500 text-white shadow-md'
-                    : 'bg-white text-slate-700 shadow-sm hover:bg-orange-50'
-                }`}
-              >
-                {showTodayOnly ? '絞り込み中' : '今日やる分だけ絞り込む'}
-              </button>
-            </div>
-              
-              <div className="flex items-center justify-between gap-4 sm:justify-end">
-                <div className="text-right">
-                   <div className="text-[14px] sm:text-xs text-slate-500">完了セクション</div>
-                   <div className="text-sm font-bold text-slate-900">
-                     {completedSectionsCount} / {displayedSections.length}
-                   </div>
-                </div>
-
-                <div className="text-right pl-2 border-l border-slate-200">
-                  <div className="text-[14px] sm:text-xs text-slate-500">タスク進捗</div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-semibold text-orange-600">
-                      {progressPercent}%
-                    </span>
-                    <span className="text-[14px] sm:text-sm text-slate-500">
-                      ({doneCount}/{totalCount})
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-500 transition-[width]"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          {totalCount > 0 && doneCount === totalCount && (
-            <div className="mt-3 rounded-xl bg-orange-100 px-4 py-2 text-center text-[15px] sm:text-sm font-bold text-orange-800 animate-pulse">
-              🎉 {frequencyLabelMap[activeFrequency]}のルーティンはすべて完了しました。おつかれさまです！
-            </div>
-          )}
-        </section>
-
-        {/* Mobile-only compact progress */}
-        <section className="md:hidden rounded-2xl bg-white/80 p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setIsBulkScheduleOpen(true)}
-                className="inline-flex items-center justify-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-              >
-                <Calendar className="h-3 w-3" />
-                まとめて設定
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowTodayOnly(!showTodayOnly)}
-                className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
-                  showTodayOnly
-                    ? 'bg-orange-500 text-white shadow-md'
-                    : 'bg-white text-slate-700 shadow-sm hover:bg-orange-50'
-                }`}
-              >
-                {showTodayOnly ? '絞り込み中' : '今日のみ'}
-              </button>
-            </div>
-            
-            <div className="text-right">
-              <div className="text-xs text-slate-500">進捗</div>
-              <div className="text-sm font-bold text-orange-600">{progressPercent}%</div>
-            </div>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-500 transition-[width]"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          {totalCount > 0 && doneCount === totalCount && (
-            <div className="mt-3 rounded-xl bg-orange-100 px-4 py-2 text-center text-sm font-bold text-orange-800">
-              🎉 完了しました！
-            </div>
-          )}
-        </section>
-
-        {/* 頻度別インフォグラフィック - 横並びレイアウト */}
+        {/* 頻度別インフォグラフィック */}
         {displayedSections.length > 0 && (
-          <FrequencyOverviewSection
-            title={frequencyDisplayData[activeFrequency].title}
-            description={frequencyDisplayData[activeFrequency].description}
-            imageSrc={frequencyDisplayData[activeFrequency].imageSrc}
-            imageAlt={frequencyDisplayData[activeFrequency].imageAlt}
-          />
+          <div className="flex justify-center">
+            <img
+              src={frequencyDisplayData[activeFrequency].imageSrc}
+              alt={frequencyDisplayData[activeFrequency].imageAlt}
+              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain"
+            />
+          </div>
         )}
 
         {/* sections */}
