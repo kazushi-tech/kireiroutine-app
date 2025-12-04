@@ -589,21 +589,24 @@ const SchedulePage: React.FC = () => {
       {/* Image Zoom Modal */}
       {zoomedImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-2 sm:p-4"
           onClick={() => setZoomedImage(null)}
         >
           <button
-            className="absolute top-4 right-4 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors"
+            className="absolute top-4 right-4 z-10 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors"
             onClick={() => setZoomedImage(null)}
           >
             <X className="h-6 w-6" />
           </button>
-          <img
-            src={zoomedImage.src}
-            alt={zoomedImage.alt}
-            className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="flex flex-col items-center justify-center w-full h-full max-h-[95vh] overflow-auto">
+            <img
+              src={zoomedImage.src}
+              alt={zoomedImage.alt}
+              className="w-auto h-auto max-h-[85vh] sm:max-h-[90vh] max-w-full sm:max-w-[90vw] rounded-xl sm:rounded-2xl object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <p className="mt-3 text-white/70 text-xs sm:text-sm">タップで閉じる</p>
+          </div>
         </div>
       )}
     </main>
