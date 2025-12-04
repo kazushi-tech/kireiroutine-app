@@ -122,6 +122,9 @@ const SchedulePage: React.FC = () => {
   
   // Bulk Schedule State
   const [isBulkScheduleOpen, setIsBulkScheduleOpen] = useState(false);
+  
+  // Image Zoom State
+  const [zoomedImage, setZoomedImage] = useState<{ src: string; alt: string } | null>(null);
   const [bulkScheduleDate, setBulkScheduleDate] = useState('');
 
   // --- load section meta on mount ---
@@ -298,12 +301,14 @@ const SchedulePage: React.FC = () => {
           storageKey="kireiRoutine-flow-section-open"
           defaultOpen={true}
         >
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center">
             <img
               src="/branding-kirei-flow-steps.jpeg"
               alt="KireiRoutine Flow Steps"
-              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain"
+              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setZoomedImage({ src: '/branding-kirei-flow-steps.jpeg', alt: 'KireiRoutine Flow Steps' })}
             />
+            <p className="text-xs text-slate-500 mt-2">※ タップで拡大</p>
           </div>
         </CollapsibleSection>
 
@@ -313,12 +318,14 @@ const SchedulePage: React.FC = () => {
           storageKey="kireiRoutine-frequency-section-open"
           defaultOpen={true}
         >
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center">
             <img
               src="/images/branding-kirei-frequency-weekly.jpeg"
               alt="掃除のタイプのインフォグラフィック"
-              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain"
+              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setZoomedImage({ src: '/images/branding-kirei-frequency-weekly.jpeg', alt: '掃除のタイプのインフォグラフィック' })}
             />
+            <p className="text-xs text-slate-500 mt-2">※ タップで拡大</p>
           </div>
         </CollapsibleSection>
 
@@ -343,29 +350,6 @@ const SchedulePage: React.FC = () => {
               </button>
             );
           })}
-          
-          {/* フィルター・設定ボタン */}
-          <div className="flex gap-2 ml-auto">
-            <button
-              type="button"
-              onClick={() => setIsBulkScheduleOpen(true)}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-            >
-              <Calendar className="h-4 w-4" />
-              まとめて設定
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowTodayOnly(!showTodayOnly)}
-              className={`rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
-                showTodayOnly
-                  ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-white text-slate-700 shadow-sm hover:bg-orange-50'
-              }`}
-            >
-              {showTodayOnly ? '絞り込み中' : '今日のみ'}
-            </button>
-          </div>
         </section>
 
         {/* 頻度別インフォグラフィック */}
@@ -374,8 +358,13 @@ const SchedulePage: React.FC = () => {
             <img
               src={frequencyDisplayData[activeFrequency].imageSrc}
               alt={frequencyDisplayData[activeFrequency].imageAlt}
-              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain"
+              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setZoomedImage({
+                src: frequencyDisplayData[activeFrequency].imageSrc,
+                alt: frequencyDisplayData[activeFrequency].imageAlt
+              })}
             />
+            <p className="text-xs text-slate-500 text-center mt-2">※ タップで拡大</p>
           </div>
         )}
 
@@ -508,6 +497,29 @@ const SchedulePage: React.FC = () => {
           </section>
         )}
 
+        {/* フィルター・設定ボタン */}
+        <section className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsBulkScheduleOpen(true)}
+            className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+          >
+            <Calendar className="h-4 w-4" />
+            掃除日をまとめて設定
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowTodayOnly(!showTodayOnly)}
+            className={`rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
+              showTodayOnly
+                ? 'bg-orange-500 text-white shadow-md'
+                : 'bg-white text-slate-700 shadow-sm hover:bg-orange-50'
+            }`}
+          >
+            {showTodayOnly ? '今日のみ表示中' : '今日やる分だけ絞り込む'}
+          </button>
+        </section>
+
         {/* tips */}
         <section className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/80 p-4 text-xs text-slate-700">
           <div className="mb-1 flex items-center gap-1 font-semibold text-orange-800">
@@ -572,6 +584,26 @@ const SchedulePage: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {/* Image Zoom Modal */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setZoomedImage(null)}
+        >
+          <button
+            className="absolute top-4 right-4 rounded-full bg-white/20 p-2 text-white hover:bg-white/30 transition-colors"
+            onClick={() => setZoomedImage(null)}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={zoomedImage.src}
+            alt={zoomedImage.alt}
+            className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </main>
