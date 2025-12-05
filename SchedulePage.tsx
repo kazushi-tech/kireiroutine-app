@@ -19,6 +19,7 @@ import {
   BookOpen,
   Calendar,
   X,
+  ChevronDown,
 } from 'lucide-react';
 import { MANUAL_SECTIONS } from './manualData';
 
@@ -343,8 +344,8 @@ const SchedulePage: React.FC = () => {
           <CollapsibleSection
             title="⏱ 効率的な作業順序"
             subtitle="待ち時間を活用して時短"
-            storageKey={`kireiRoutine-execution-guide-${activeFrequency}`}
-            defaultOpen={false}
+            storageKey={`kireiRoutine-exec-v3-${activeFrequency}`}
+            defaultOpen={true}
           >
             <ExecutionGuide
               sections={displayedSections}
@@ -418,43 +419,34 @@ const SchedulePage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* tasks */}
-                    <ul className="space-y-2">
-                      {section.tasks.slice(0, 3).map((task) => {
-                        const checked = !!completedTasks[task.id];
-                        return (
-                          <li key={task.id}>
-                            <button
-                              type="button"
-                              onClick={() => handleToggleTask(task.id)}
-                              className="flex w-full items-start gap-2 text-left text-[17px] sm:text-sm text-slate-800"
-                            >
-                              {checked ? (
-                                <CheckCircle2 className="mt-[1px] h-4 w-4 flex-shrink-0 text-orange-500" />
-                              ) : (
-                                <Circle className="mt-[1px] h-4 w-4 flex-shrink-0 text-slate-300" />
-                              )}
-                              <span>{task.text}</span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                      {section.tasks.length > 3 && (
-                        <li className="pt-1">
-                          <div className="flex items-center justify-between text-xs text-slate-500">
-                            <span>...他 {section.tasks.length - 3} 件のタスク</span>
-                            {hasManual && (
-                              <Link
-                                to={`/section/${section.id}`}
-                                className="text-orange-600 hover:text-orange-700 font-medium hover:underline"
+                    {/* tasks - 折りたたみ式 */}
+                    <details className="group">
+                      <summary className="flex items-center justify-between cursor-pointer list-none py-2 text-sm font-medium text-slate-700">
+                        <span>📋 タスク一覧（{section.tasks.length}件）</span>
+                        <ChevronDown className="h-4 w-4 text-slate-400 group-open:rotate-180 transition-transform" />
+                      </summary>
+                      <ul className="space-y-2 pt-2">
+                        {section.tasks.map((task) => {
+                          const checked = !!completedTasks[task.id];
+                          return (
+                            <li key={task.id}>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleTask(task.id)}
+                                className="flex w-full items-start gap-2 text-left text-sm text-slate-800"
                               >
-                                詳細を見る →
-                              </Link>
-                            )}
-                          </div>
-                        </li>
-                      )}
-                    </ul>
+                                {checked ? (
+                                  <CheckCircle2 className="mt-[1px] h-4 w-4 flex-shrink-0 text-orange-500" />
+                                ) : (
+                                  <Circle className="mt-[1px] h-4 w-4 flex-shrink-0 text-slate-300" />
+                                )}
+                                <span>{task.text}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </details>
 
                     {/* tools hint */}
                     {section.tools && section.tools.length > 0 && (

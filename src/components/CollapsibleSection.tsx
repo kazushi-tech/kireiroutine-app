@@ -47,8 +47,13 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 
   return (
     <section className="flex flex-col gap-4 rounded-3xl bg-white p-4 sm:p-6 shadow-sm border border-slate-100">
-      {/* ヘッダー部分 */}
-      <div className="flex items-start justify-between gap-4">
+      {/* ヘッダー部分 - 全体がタップ可能 */}
+      <button
+        type="button"
+        onClick={toggleOpen}
+        className="flex items-center justify-between gap-4 w-full text-left cursor-pointer"
+        aria-expanded={isOpen}
+      >
         <div className="flex-1">
           <h2 className="text-base sm:text-lg font-bold text-slate-900">{title}</h2>
           {subtitle && (
@@ -56,26 +61,15 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           )}
         </div>
 
-        {/* トグルボタン */}
-        <button
-          type="button"
-          onClick={toggleOpen}
-          className="flex-shrink-0 inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
-          aria-expanded={isOpen}
-        >
+        {/* トグルアイコン */}
+        <div className="flex-shrink-0 inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
           {isOpen ? (
-            <>
-              <ChevronUp className="h-3 w-3" />
-              <span className="hidden sm:inline">閉じる</span>
-            </>
+            <ChevronUp className="h-4 w-4" />
           ) : (
-            <>
-              <ChevronDown className="h-3 w-3" />
-              <span className="hidden sm:inline">詳しく見る</span>
-            </>
+            <ChevronDown className="h-4 w-4" />
           )}
-        </button>
-      </div>
+        </div>
+      </button>
 
       {/* コンテンツ部分 */}
       {isOpen && (
@@ -88,3 +82,4 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 };
 
 export default CollapsibleSection;
+
