@@ -21,6 +21,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CLEANING_DATA, FREQUENCY_SUMMARY_META } from "./constants";
 import { Frequency } from "./types";
+import { Brush } from "lucide-react";
 
 type RepeatType =
   | "once"
@@ -90,6 +91,52 @@ const REPEAT_TABS: { value: RepeatType; label: string }[] = [
   { value: "semiannual", label: "半年に1回" },
   { value: "yearly", label: "年1" },
 ];
+
+// 頻度ごとの色マッピング
+const FREQUENCY_COLORS: Record<Frequency, { bg: string; border: string; text: string; icon: string; dot: string }> = {
+  [Frequency.Weekly]: {
+    bg: 'bg-orange-100',
+    border: 'border-orange-200',
+    text: 'text-orange-900',
+    icon: 'text-orange-500',
+    dot: 'bg-orange-400',
+  },
+  [Frequency.BiWeekly]: {
+    bg: 'bg-sky-100',
+    border: 'border-sky-200',
+    text: 'text-sky-900',
+    icon: 'text-sky-500',
+    dot: 'bg-sky-400',
+  },
+  [Frequency.Monthly]: {
+    bg: 'bg-violet-100',
+    border: 'border-violet-200',
+    text: 'text-violet-900',
+    icon: 'text-violet-500',
+    dot: 'bg-violet-400',
+  },
+  [Frequency.Quarterly]: {
+    bg: 'bg-pink-100',
+    border: 'border-pink-200',
+    text: 'text-pink-900',
+    icon: 'text-pink-500',
+    dot: 'bg-pink-400',
+  },
+  [Frequency.SemiAnnual]: {
+    bg: 'bg-amber-100',
+    border: 'border-amber-200',
+    text: 'text-amber-900',
+    icon: 'text-amber-500',
+    dot: 'bg-amber-400',
+  },
+  [Frequency.Annual]: {
+    bg: 'bg-rose-100',
+    border: 'border-rose-200',
+    text: 'text-rose-900',
+    icon: 'text-rose-500',
+    dot: 'bg-rose-400',
+  },
+};
 
 const today = new Date();
 const todayKey = formatDateKey(today);
@@ -944,19 +991,38 @@ const CalendarPage: React.FC = () => {
 
                 const key = cell.key;
                 const isToday = key === todayKey;
-                const hasTasks = (calendarMap[key] ?? []).length > 0;
+                const taskIds = calendarMap[key] ?? [];
+                const hasTasks = taskIds.length > 0;
                 const isSelected = isBulkAssignMode && bulkSelectedDates.has(key);
+                
+                // タスクの頻度を取得（複数ある場合は最も高頻度のものを使用）
+                const tasksInDay = taskIds.map(id => TASK_MAP[id]).filter((t): t is CalendarTask => !!t);
+                const frequencies = tasksInDay.map(t => t.frequency);
+                // 優先度: Weekly > BiWeekly > Monthly > Quarterly > SemiAnnual > Annual
+                const dominantFreq = frequencies.includes(Frequency.Weekly) ? Frequency.Weekly
+                  : frequencies.includes(Frequency.BiWeekly) ? Frequency.BiWeekly
+                  : frequencies.includes(Frequency.Monthly) ? Frequency.Monthly
+                  : frequencies.includes(Frequency.Quarterly) ? Frequency.Quarterly
+                  : frequencies.includes(Frequency.SemiAnnual) ? Frequency.SemiAnnual
+                  : frequencies.includes(Frequency.Annual) ? Frequency.Annual
+                  : null;
+                
+                const freqColors = dominantFreq ? FREQUENCY_COLORS[dominantFreq] : null;
 
                 let baseClasses =
-                  "flex h-8 sm:h-9 lg:h-10 items-center justify-center rounded-2xl cursor-pointer text-xs sm:text-sm transition-colors";
+                  "relative flex h-10 sm:h-11 lg:h-12 items-center justify-center rounded-2xl cursor-pointer text-xs sm:text-sm transition-colors";
                 let colorClasses = "";
+                let iconColorClass = "text-slate-400";
 
                 if (isSelected) {
                   colorClasses = "bg-emerald-200 text-emerald-900 border-2 border-emerald-500";
-                } else if (isToday && hasTasks) {
+                  iconColorClass = "text-emerald-600";
+                } else if (isToday && hasTasks && freqColors) {
                   colorClasses = "bg-emerald-500 text-white";
-                } else if (hasTasks) {
-                  colorClasses = "bg-emerald-100 text-emerald-900";
+                  iconColorClass = "text-white";
+                } else if (hasTasks && freqColors) {
+                  colorClasses = `${freqColors.bg} ${freqColors.text} border ${freqColors.border}`;
+                  iconColorClass = freqColors.icon;
                 } else if (isToday) {
                   colorClasses =
                     "border border-emerald-400 text-emerald-700 bg-white";
@@ -972,25 +1038,37 @@ const CalendarPage: React.FC = () => {
                     onClick={() => handleSelectDay(cell.date)}
                     className={`${baseClasses} ${colorClasses}`}
                   >
-                    {cell.date.getDate()}
+                    {/* アイコン（予定ありの日のみ） */}
+                    {hasTasks && (
+                      <Brush className={`absolute -top-0.5 -right-0.5 h-3 w-3 sm:h-3.5 sm:w-3.5 ${iconColorClass}`} />
+                    )}
+                    <span>{cell.date.getDate()}</span>
                   </button>
                 );
               })}
             </div>
 
             {/* 凡例 */}
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] sm:text-xs text-slate-500">
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] sm:text-xs text-slate-500">
               <div className="flex items-center gap-1">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                <span>今日 &amp; 掃除タスクあり</span>
+                <span>今日</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-100 border border-emerald-300" />
-                <span>掃除タスクあり</span>
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${FREQUENCY_COLORS[Frequency.Weekly].dot}`} />
+                <span>週1</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-slate-50 border border-slate-200" />
-                <span>タスクなし</span>
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${FREQUENCY_COLORS[Frequency.BiWeekly].dot}`} />
+                <span>2週に1回</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${FREQUENCY_COLORS[Frequency.Monthly].dot}`} />
+                <span>月1</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${FREQUENCY_COLORS[Frequency.Quarterly].dot}`} />
+                <span>3ヶ月</span>
               </div>
             </div>
             
@@ -1478,10 +1556,11 @@ function FrequencySummaryCard({
   isBulkActive = false,
 }: FrequencySummaryProps) {
   const meta = FREQUENCY_SUMMARY_META[frequencyId];
+  const colors = FREQUENCY_COLORS[frequencyId];
   if (!meta) return null;
 
   return (
-    <div className={`w-full rounded-xl border bg-white/80 p-3 shadow-sm transition ${isBulkActive ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-slate-200'}`}>
+    <div className={`w-full rounded-xl border ${colors.bg} p-3 shadow-sm transition ${isBulkActive ? 'border-emerald-500 ring-2 ring-emerald-200' : colors.border}`}>
       <button
         type="button"
         onClick={onClick}
@@ -1489,7 +1568,10 @@ function FrequencySummaryCard({
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
-            <p className="text-xs font-semibold text-slate-700">{meta.label}</p>
+            <div className="flex items-center gap-2">
+              <span className={`inline-block h-3 w-3 rounded-full ${colors.dot} flex-shrink-0`} />
+              <p className="text-xs font-semibold text-slate-700">{meta.label}</p>
+            </div>
             <p className="mt-1 text-[11px] leading-snug text-slate-500">
               {meta.shortDescription}
             </p>
@@ -1511,7 +1593,7 @@ function FrequencySummaryCard({
         className={`mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-medium transition ${
           isBulkActive
             ? 'bg-emerald-500 text-white shadow-sm'
-            : 'bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+            : 'bg-white/80 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
         }`}
       >
         {isBulkActive ? '📅 選択中... (キャンセルはカレンダー下部から)' : '📅 一括登録'}

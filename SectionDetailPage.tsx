@@ -191,6 +191,23 @@ const SectionDetailPage: React.FC = () => {
               </p>
             </div>
 
+            {/* 並行作業のヒント */}
+            {relatedSection?.parallelTip && (
+              <div className="rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-50 p-5 border border-blue-100">
+                <p className="mb-1 text-base font-bold text-blue-800 flex items-center gap-2">
+                  💡 時短のコツ
+                </p>
+                <p className="text-[16px] sm:text-sm leading-relaxed text-slate-800">
+                  {relatedSection.parallelTip}
+                </p>
+                {relatedSection.waitTime && (
+                  <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-amber-700">
+                    ⏱ 約{relatedSection.waitTime}分の待ち時間を活用
+                  </p>
+                )}
+              </div>
+            )}
+
             {manual.notes && (
               <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-[16px] sm:text-sm leading-relaxed text-slate-700">
                 <p className="mb-1 font-bold text-slate-700">

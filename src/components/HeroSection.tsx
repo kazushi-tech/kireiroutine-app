@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface HeroSectionProps {
-  onStartClick: () => void;
+  onStartClick?: () => void;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ onStartClick }) => {
@@ -19,12 +19,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onStartClick }) => {
           </p>
         </div>
         
-        <button
-          onClick={onStartClick}
-          className="mt-2 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-8 py-3 text-sm font-bold text-white shadow-md transition-transform hover:scale-105 active:scale-95"
-        >
-          週1の掃除をはじめる
-        </button>
+        {onStartClick && (
+          <button
+            onClick={onStartClick}
+            className="mt-2 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-8 py-3 text-sm font-bold text-white shadow-md transition-transform hover:scale-105 active:scale-95"
+          >
+            週1の掃除をはじめる
+          </button>
+        )}
       </div>
 
       {/* 右側: 画像 */}

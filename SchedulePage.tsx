@@ -4,12 +4,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { CLEANING_DATA, IMAGE_URLS } from './constants';
 import { Frequency, ScheduleCategory, SectionMetaMap } from './types';
 import { loadSectionMetaMap, isDueToday, formatDateForDisplay, updateSectionMeta, normalizeDateInput } from './sectionMetaStorage';
-import HeroSection from './src/components/HeroSection';
-import FlowSection from './src/components/FlowSection';
-import FrequencyInfoSection from './src/components/FrequencyInfoSection';
 import TodayTasksSection from './src/components/TodayTasksSection';
 import CollapsibleSection from './src/components/CollapsibleSection';
 import FrequencyOverviewSection from './src/components/FrequencyOverviewSection';
+import ExecutionGuide from './src/components/ExecutionGuide';
+import SimpleDashboard from './src/components/SimpleDashboard';
 import {
   Sparkles,
   CheckCircle2,
@@ -126,6 +125,9 @@ const SchedulePage: React.FC = () => {
   // Image Zoom State
   const [zoomedImage, setZoomedImage] = useState<{ src: string; alt: string } | null>(null);
   const [bulkScheduleDate, setBulkScheduleDate] = useState('');
+  
+  // Simple Mode State
+  const [isSimpleMode, setIsSimpleMode] = useState(false);
 
   // --- load section meta on mount ---
   useEffect(() => {
@@ -248,7 +250,7 @@ const SchedulePage: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#f7f1e7] px-4 py-5 text-slate-900">
+    <main className="min-h-screen bg-[#f7f1e7] px-4 py-5 pb-24 text-slate-900">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
         {/* header */}
         <header className="flex flex-col gap-3 border-b border-orange-100 pb-4 md:flex-row md:items-center md:justify-between">
@@ -288,84 +290,51 @@ const SchedulePage: React.FC = () => {
           </div>
         </header>
 
-        <HeroSection onStartClick={handleStartClick} />
-        
+        {/* 今日のタスクサマリー */}
         <TodayTasksSection 
           sectionMetaMap={sectionMetaMap}
           onViewTodayTasks={handleViewTodayTasks}
+          onStartSimpleMode={() => setIsSimpleMode(true)}
         />
-        
-        <CollapsibleSection
-          title="KireiRoutine の流れ"
-          subtitle=""
-          storageKey="kireiRoutine-flow-section-open"
-          defaultOpen={true}
-        >
-          <div className="flex flex-col items-center">
-            <img
-              src="/branding-kirei-flow-steps.jpeg"
-              alt="KireiRoutine Flow Steps"
-              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setZoomedImage({ src: '/branding-kirei-flow-steps.jpeg', alt: 'KireiRoutine Flow Steps' })}
-            />
-            <p className="text-xs text-slate-500 mt-2">※ タップで拡大</p>
-          </div>
-        </CollapsibleSection>
 
-        <CollapsibleSection
-          title="掃除のタイプ"
-          subtitle=""
-          storageKey="kireiRoutine-frequency-section-open"
-          defaultOpen={true}
-        >
-          <div className="flex flex-col items-center">
-            <img
-              src="/images/branding-kirei-frequency-weekly.jpeg"
-              alt="掃除のタイプのインフォグラフィック"
-              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setZoomedImage({ src: '/images/branding-kirei-frequency-weekly.jpeg', alt: '掃除のタイプのインフォグラフィック' })}
-            />
-            <p className="text-xs text-slate-500 mt-2">※ タップで拡大</p>
+        {/* 頻度タブ - 上部に固定表示 */}
+        <section ref={tabsRef} className="sticky top-0 z-40 bg-[#f7f1e7] py-3 -mx-4 px-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {frequencyOrder.map((freq) => {
+              const label = frequencyLabelMap[freq];
+              if (!label) return null;
+              const isActive = freq === activeFrequency;
+              return (
+                <button
+                  key={freq}
+                  type="button"
+                  onClick={() => setActiveFrequency(freq)}
+                  className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? 'bg-orange-500 text-white shadow-sm'
+                      : 'bg-white text-slate-700 hover:bg-orange-50 border border-slate-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
-        </CollapsibleSection>
-
-        {/* frequency tabs */}
-        <section ref={tabsRef} className="flex flex-wrap items-center gap-2 pb-2">
-          {frequencyOrder.map((freq) => {
-            const label = frequencyLabelMap[freq];
-            if (!label) return null;
-            const isActive = freq === activeFrequency;
-            return (
-              <button
-                key={freq}
-                type="button"
-                onClick={() => setActiveFrequency(freq)}
-                className={`flex-shrink-0 rounded-full px-5 py-2.5 text-sm font-medium transition ${
-                  isActive
-                    ? 'bg-orange-500 text-white shadow-sm'
-                    : 'bg-white text-slate-700 hover:bg-orange-50'
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
         </section>
 
-        {/* 頻度別インフォグラフィック */}
+        {/* 効率的な作業順序ガイド */}
         {displayedSections.length > 0 && (
-          <div className="flex justify-center">
-            <img
-              src={frequencyDisplayData[activeFrequency].imageSrc}
-              alt={frequencyDisplayData[activeFrequency].imageAlt}
-              className="w-full max-w-[700px] rounded-3xl shadow-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setZoomedImage({
-                src: frequencyDisplayData[activeFrequency].imageSrc,
-                alt: frequencyDisplayData[activeFrequency].imageAlt
-              })}
+          <CollapsibleSection
+            title="⏱ 効率的な作業順序"
+            subtitle="待ち時間を活用して時短"
+            storageKey={`kireiRoutine-execution-guide-${activeFrequency}`}
+            defaultOpen={false}
+          >
+            <ExecutionGuide
+              sections={displayedSections}
+              frequency={activeFrequency}
             />
-            <p className="text-xs text-slate-500 text-center mt-2">※ タップで拡大</p>
-          </div>
+          </CollapsibleSection>
         )}
 
         {/* sections */}
@@ -608,6 +577,15 @@ const SchedulePage: React.FC = () => {
             <p className="mt-3 text-white/70 text-xs sm:text-sm">タップで閉じる</p>
           </div>
         </div>
+      )}
+      {/* Simple Dashboard Mode */}
+      {isSimpleMode && (
+        <SimpleDashboard
+          sectionMetaMap={sectionMetaMap}
+          completedTasks={completedTasks}
+          onToggleTask={handleToggleTask}
+          onClose={() => setIsSimpleMode(false)}
+        />
       )}
     </main>
   );

@@ -29,6 +29,9 @@ export interface CleaningSection {
   tools: string[]; // 必要な道具リスト
   imageKey: string; // constants.tsのIMAGE_URLSに対応するキー
   step: number; // 推奨実行順序
+  parallelTip?: string; // このセクション作業中に並行でできること
+  waitTime?: number; // このセクションで発生する待ち時間（分）
+  waitAction?: string; // 待ち時間中に何をするか（例：「つけ置き中に→」）
 }
 
 /**

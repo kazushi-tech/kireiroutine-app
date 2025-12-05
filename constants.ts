@@ -37,6 +37,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "寝室・ベッド周り",
         imageKey: "bedroom",
         step: 1,
+        parallelTip: "シーツを洗濯機に入れたら、回っている間に次のエリアへ進む",
+        waitTime: 30,
+        waitAction: "洗濯中→次のエリアへ",
         tasks: [
           { id: "w-bed-1", text: "シーツ・枕カバーを洗濯して交換する" },
           { id: "w-bed-2", text: "ベッドまわりの床（ベッド下の手が届く範囲）を掃除機 → モップで拭き掃除" },
@@ -49,6 +52,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "キッチン",
         imageKey: "kitchen",
         step: 3,
+        parallelTip: "排水口に洗剤を入れてつけ置き→その間にコンロ周りを拭く",
+        waitTime: 5,
+        waitAction: "つけ置き中→コンロへ",
         tasks: [
           { id: "w-kit-1", text: "キッチン排水口・シンクのぬめり除去（酸素系漂白剤や中性洗剤で）" },
           { id: "w-kit-2", text: "コンロまわり（ガスコンロ）の表面・つまみを中性洗剤で拭き掃除" },
@@ -63,6 +69,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "浴室・洗面所",
         imageKey: "bathroom",
         step: 4,
+        parallelTip: "鏡にクエン酸ラップをしたら、湿布中にトイレ掃除へ",
+        waitTime: 10,
+        waitAction: "湿布中→トイレへ",
         tasks: [
           { id: "w-bath-1", text: "浴室排水口のフタ・ヘアキャッチャーのゴミを捨てて軽く洗う" },
           { id: "w-bath-2", text: "浴室排水口を簡易分解洗浄し、ぬめりを落とす" },
@@ -75,6 +84,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "トイレ",
         imageKey: "toilet",
         step: 5,
+        parallelTip: "便器に洗剤を塗布したら、なじませ中に床・壁を拭く",
+        waitTime: 3,
+        waitAction: "なじませ中→床拭き",
         tasks: [
           { id: "w-toilet-1", text: "便器内をトイレ用洗剤＋ブラシでこする" },
           { id: "w-toilet-2", text: "便座・フタ・レバー・便器外側・床まわりをトイレ用お掃除シートで拭き掃除" },
@@ -88,6 +100,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "リビング・ワークスペース",
         imageKey: "living",
         step: 2,
+        parallelTip: "掃除機→モップ→キッチンへ移動しながら一筆書きで",
         tasks: [
           { id: "w-living-1", text: "部屋全体（リビング・キッチン・廊下含む）の床を掃除機がけ" },
           { id: "w-living-2", text: "床全体をフロアモップ（ウェットシートまたは固く絞った雑巾）で拭き掃除" },
@@ -130,6 +143,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "キッチン",
         imageKey: "kitchen",
         step: 1,
+        parallelTip: "コンロ受け皿をつけ置き→電子レンジの重曹水加熱→冷蔵庫整理を並行",
+        waitTime: 15,
+        waitAction: "つけ置き中→レンジへ",
         tasks: [
           { id: "bi-kit-1", text: "コンロの受け皿・汁受けプレートを外し、中性洗剤か重曹でつけ置き洗い" },
           { id: "bi-kit-2", text: "電子レンジ庫内のこびりつきを、重曹水をチンして蒸気でふやかしてから拭き取り" },
@@ -142,6 +158,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "浴室・洗面所",
         imageKey: "bathroom",
         step: 2,
+        parallelTip: "浴室の壁・床をこすったら放置→その間に洗面台下収納を整理",
         tasks: [
           { id: "bi-bath-1", text: "浴室の壁・床全体をブラシでこすり、カビ予備軍を減らす" },
           { id: "bi-bath-2", text: "洗面台下収納の中身をざっと見直し、不要な箱やゴミを捨てる" },
@@ -153,6 +170,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "トイレ",
         imageKey: "toilet",
         step: 3,
+        parallelTip: "壁に洗剤を塗布→なじませ中に玄関の靴箱換気を開始",
+        waitTime: 3,
+        waitAction: "なじませ中→玄関へ",
         tasks: [
           { id: "bi-toilet-1", text: "便器横〜壁の下部を中性洗剤をつけたクロスで拭き掃除（跳ね汚れ対策）" },
         ],
@@ -163,8 +183,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "玄関・廊下",
         imageKey: "entrance",
         step: 4,
+        parallelTip: "靴箱の扱を開けて換気→換気中に靴の手入れを並行",
         tasks: [
-          { id: "bi-ent-1", text: "靴箱の扉を開けて換気し、手前側の棚板をさっと拭く" },
+          { id: "bi-ent-1", text: "靴箱の扱を開けて換気し、手前側の棚板をさっと拭く" },
           { id: "bi-ent-2", text: "よく履く靴の表面の汚れを、濡れ雑巾かシューケアシートで拭き取る" },
         ],
         tools: ["マイクロファイバークロス", "シューケアシート"]
@@ -174,6 +195,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "その他・共通",
         imageKey: "general",
         step: 5,
+        parallelTip: "掃除機のフィルター掃除→ゴミ箱拭きを同じタイミングで",
         tasks: [
           { id: "bi-other-1", text: "掃除機のダストボックス・紙パック・フィルターを掃除" },
           { id: "bi-other-2", text: "ゴミ箱の内側をアルコールシートで拭き、ニオイ対策" },
@@ -192,6 +214,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "寝室・ベッド周り",
         imageKey: "bedroom",
         step: 1,
+        parallelTip: "寝具を洗濯機に入れる→回っている間にマットレス換気→キッチンへ",
+        waitTime: 45,
+        waitAction: "洗濯中→キッチンへ",
         tasks: [
           { id: "mo-bed-1", text: "ベッドパッドや毛布など「シーツ以外」の寝具を洗濯" },
           { id: "mo-bed-2", text: "マットレスを壁に立てかけるなどして、風を通す" },
@@ -203,6 +228,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "キッチン",
         imageKey: "kitchen",
         step: 2,
+        parallelTip: "冷蔵庫棚を洗って乾燥中→ケトルクエン酸沸騰→レンジフード拭きを並行",
+        waitTime: 15,
+        waitAction: "乾燥中→ケトルへ",
         tasks: [
           { id: "mo-kit-1", text: "冷蔵庫の棚・ドアポケットを外せる範囲で外し、洗剤で洗ってからよく乾かす" },
           { id: "mo-kit-2", text: "冷蔵庫内の在庫を見直し、賞味期限が近いもの／不要なものを整理" },
@@ -217,6 +245,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "浴室・洗面所",
         imageKey: "bathroom",
         step: 3,
+        parallelTip: "洗濯槽クリーナー運転開始→運転中に洗面台排水口掃除へ",
+        waitTime: 60,
+        waitAction: "槽洗浄中→洗面台へ",
         tasks: [
           { id: "mo-bath-1", text: "洗濯槽クリーナーで「槽洗浄コース」を運転" },
           { id: "mo-bath-2", text: "洗濯機のゴムパッキン周り・フタの内側を拭き掃除" },
@@ -229,6 +260,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "トイレ",
         imageKey: "toilet",
         step: 4,
+        parallelTip: "タンク周りの掃除→玄関のゴミ箱丸洗いと並行で進行",
         tasks: [
           { id: "mo-toilet-1", text: "トイレタンク上の手洗い部分・フタ周辺を中性洗剤でしっかり拭き掃除" },
         ],
@@ -239,6 +271,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "玄関・廊下",
         imageKey: "entrance",
         step: 5,
+        parallelTip: "ゴミ箱を洗って乾燥中→玄関ドア拭きを並行",
+        waitTime: 20,
+        waitAction: "乾燥中→ドア拭き",
         tasks: [
           { id: "mo-ent-1", text: "ゴミ箱を丸洗いして、しっかり乾燥させる" },
           { id: "mo-ent-2", text: "玄関ドアの内側を中性洗剤で拭き、手あかを落とす" },
@@ -257,6 +292,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "寝室・ベッド周り",
         imageKey: "bedroom",
         step: 1,
+        parallelTip: "布団を天日干し開始→干している間にリビングのカーテン払いへ",
+        waitTime: 60,
+        waitAction: "天日干し中→リビングへ",
         tasks: [
           { id: "qu-bed-1", text: "マットレスの向きを90〜180度変える" },
           { id: "qu-bed-2", text: "掛け布団・枕を天日干しして、湿気とニオイをリセット" },
@@ -268,6 +306,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "キッチン",
         imageKey: "kitchen",
         step: 3,
+        parallelTip: "レンジフードフィルターをつけ置き→冷蔵庫周りのホコリ取り→収納整理を並行",
+        waitTime: 20,
+        waitAction: "つけ置き中→冷蔵庫へ",
         tasks: [
           { id: "qu-kit-1", text: "レンジフードのフィルターを外し、ぬるま湯＋中性洗剤 or 重曹でつけ置き洗い" },
           { id: "qu-kit-2", text: "冷蔵庫の上・側面・背面のホコリを掃除機＋クロスで拭き取る" },
@@ -280,6 +321,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "浴室・洗面所",
         imageKey: "bathroom",
         step: 4,
+        parallelTip: "カビ取り剤を塗布→待機中に洗濯機フィルター掃除へ",
+        waitTime: 15,
+        waitAction: "カビ取り待機中→洗濯機へ",
         tasks: [
           { id: "qu-bath-1", text: "浴室のゴムパッキン・タイル目地にカビ取り剤を塗り、時間をおいてから洗い流す" },
           { id: "qu-bath-2", text: "浴室ドアのレール・パッキン部分の黒ずみをブラシでこする" },
@@ -292,6 +336,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "リビング",
         imageKey: "living",
         step: 2,
+        parallelTip: "カーテンホコリ払い→照明掃除→キッチンのフィルターつけ置きへ",
         tasks: [
           { id: "qu-liv-1", text: "カーテン全体をはたき・ハンディモップでホコリ払い" },
           { id: "qu-liv-2", text: "照明器具（シーリングライトなど）の表面のホコリをハンディモップで取る" },
@@ -303,6 +348,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "玄関・ベランダ",
         imageKey: "balcony",
         step: 5,
+        parallelTip: "ベランダ掃き→サッシレール掃除→その他のエアコンへ",
         tasks: [
           { id: "qu-bal-1", text: "ベランダの床をほうきで掃き、泥や砂を掃除" },
           { id: "qu-bal-2", text: "玄関〜ベランダにかけて、サッシレールのホコリ・ゴミをブラシ＋掃除機で吸い取る" },
@@ -314,6 +360,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "その他",
         imageKey: "general",
         step: 6,
+        parallelTip: "エアコンフィルター水洗い→乾燥中に窓・網戸掃除を並行",
+        waitTime: 30,
+        waitAction: "フィルター乾燥中→窓へ",
         tasks: [
           { id: "qu-oth-1", text: "エアコンの前面カバーを外し、フィルターを掃除機＋水洗いして乾燥" },
           { id: "qu-oth-2", text: "窓ガラスの内側をガラスクリーナーで拭き掃除" },
@@ -333,6 +382,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "寝室",
         imageKey: "bedroom",
         step: 1,
+        parallelTip: "衣類仕分け→リビング収納整理→キッチンへと順番に進める",
         tasks: [
           { id: "sa-bed-1", text: "クローゼット内の衣類を見直し、「着ていない服」を仕分け" },
           { id: "sa-bed-2", text: "オフシーズンの寝具（毛布・厚手布団など）をクリーニング or 丸洗い" },
@@ -344,6 +394,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "キッチン",
         imageKey: "kitchen",
         step: 3,
+        parallelTip: "調理器具仕分け→調味料棚拭きを並行で進める",
         tasks: [
           { id: "sa-kit-1", text: "使用頻度の低い調理器具・食器を見直し、不要なものは処分" },
           { id: "sa-kit-2", text: "調味料棚全体を拭き掃除し、賞味期限切れの調味料を整理" },
@@ -355,6 +406,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "浴室・洗面所",
         imageKey: "bathroom",
         step: 4,
+        parallelTip: "シャワーヘッドをクエン酸つけ置き→待機中に防水パン掃除へ",
+        waitTime: 30,
+        waitAction: "つけ置き中→防水パンへ",
         tasks: [
           { id: "sa-bath-1", text: "シャワーヘッド・ホース・カランなどをクエン酸につけ置きして、頑固な水垢を除去" },
           { id: "sa-bath-2", text: "洗濯機の防水パン・排水トラップを外せるところまで外し、汚れを掃除" },
@@ -366,6 +420,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "トイレ",
         imageKey: "toilet",
         step: 5,
+        parallelTip: "トイレ床・壁掃除→玄関の靴箱全出しへ",
         tasks: [
           { id: "sa-toilet-1", text: "トイレの床全面・壁の下部を中性洗剤＋水拭き → から拭きでリセット" },
           { id: "sa-toilet-2", text: "タンク内に使用可能な洗浄剤があれば、取扱説明書に従って使用" },
@@ -377,6 +432,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "リビング",
         imageKey: "living",
         step: 2,
+        parallelTip: "収納棚整理→不用品仕分け→キッチン整理へ順番に",
         tasks: [
           { id: "sa-liv-1", text: "収納棚・引き出しを一度中身を出して、底面・側面を拭き掃除" },
           { id: "sa-liv-2", text: "「もう使わないもの」を仕分けして処分 or 売却候補に" },
@@ -388,6 +444,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "玄関・ベランダ",
         imageKey: "entrance",
         step: 6,
+        parallelTip: "靴箱棚板拭き→ベランダ掃除→照明掃除へ",
         tasks: [
           { id: "sa-ent-1", text: "靴箱の中身を全出しして、棚板を中性洗剤で拭き掃除" },
           { id: "sa-ent-2", text: "ベランダ床・排水口をブラシでこすり洗い" },
@@ -399,6 +456,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "その他",
         imageKey: "general",
         step: 7,
+        parallelTip: "照明カバー洗い→乾燥中にエアコン掃除へ",
+        waitTime: 20,
+        waitAction: "乾燥中→エアコンへ",
         tasks: [
           { id: "sa-oth-1", text: "照明器具のカバーを外し、水洗い or 拭き掃除してホコリと虫の死骸を除去" },
           { id: "sa-oth-2", text: "エアコンの吹き出し口・ルーバー周辺を、専用ブラシや綿棒でできる範囲で掃除" },
@@ -417,6 +477,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "寝室",
         imageKey: "bedroom",
         step: 1,
+        parallelTip: "カーテン洗濯開始→洗濯中にリビングの大型家具移動へ",
+        waitTime: 60,
+        waitAction: "洗濯中→リビングへ",
         tasks: [
           { id: "an-bed-1", text: "布団・マットレスの状態を確認し、ヘタりがひどければ買い替えを検討" },
           { id: "an-bed-2", text: "カーテン（レース・厚地両方）を洗濯し、レール・フックも拭き掃除" },
@@ -428,6 +491,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "キッチン",
         imageKey: "kitchen",
         step: 3,
+        parallelTip: "レンジフードつけ置き→冷蔵庫丸洗い→オーブン掃除を並行",
+        waitTime: 30,
+        waitAction: "つけ置き中→冷蔵庫へ",
         tasks: [
           { id: "an-kit-1", text: "レンジフード内部（ファン・内部パネルなど）を可能な範囲で分解洗浄 or 業者依頼" },
           { id: "an-kit-2", text: "冷蔵庫をほぼ空にして、棚・引き出しを丸洗いし、背面まで移動して床の汚れを掃除" },
@@ -440,6 +506,9 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "浴室",
         imageKey: "bathroom",
         step: 4,
+        parallelTip: "カビ取り剤塗布→待機中にトイレ大掃除へ",
+        waitTime: 20,
+        waitAction: "カビ取り待機中→トイレへ",
         tasks: [
           { id: "an-bath-1", text: "浴室全体（天井・壁・床・ドア・換気扇カバー）をカビ取り剤＋中性洗剤で徹底的に掃除" },
           { id: "an-bath-2", text: "洗濯機の分解クリーニングが必要なら、業者クリーニングを検討" },
@@ -451,6 +520,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "トイレ",
         imageKey: "toilet",
         step: 5,
+        parallelTip: "トイレ大掃除→玄関・ベランダ洗浄へ",
         tasks: [
           { id: "an-toilet-1", text: "トイレ全体（タンク内含む）を大掃除し、黄ばみ・黒ずみ・水垢を徹底除去" },
         ],
@@ -461,6 +531,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "リビング",
         imageKey: "living",
         step: 2,
+        parallelTip: "大型家具移動→壁掃除→総仕分けを順番に",
         tasks: [
           { id: "an-liv-1", text: "大型家具・家電を動かし、裏側・下のホコリを掃除" },
           { id: "an-liv-2", text: "壁の黒ずみ・手あかが気になる箇所を、メラミンスポンジなどでやさしくこすってリセット" },
@@ -473,6 +544,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "玄関・ベランダ",
         imageKey: "balcony",
         step: 6,
+        parallelTip: "玄関ドア洗浄→ベランダ水洗い→不用品整理へ",
         tasks: [
           { id: "an-ent-1", text: "玄関ドアの外側・ポストをまとめて洗浄" },
           { id: "an-ent-2", text: "ベランダ全体を水洗い" },
@@ -484,6 +556,7 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         areaName: "その他",
         imageKey: "general",
         step: 7,
+        parallelTip: "エアコン業者依頼は事前予約→不用品整理を並行で進める",
         tasks: [
           { id: "an-oth-1", text: "エアコン内部クリーニングを業者に依頼" },
           { id: "an-oth-2", text: "1年分の不要品を洗い出し、粗大ゴミ回収やフリマアプリで処分" },

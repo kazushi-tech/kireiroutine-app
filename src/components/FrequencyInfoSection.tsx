@@ -12,9 +12,9 @@ const FrequencyInfoSection: React.FC = () => {
 
       <div className="mx-auto w-full max-w-2xl px-4">
         <img
-          src="/branding-kirei-frequency-cards.jpeg"
+          src="/images/branding-kirei-frequency-weekly.jpeg"
           alt="Cleaning Frequencies"
-          className="h-auto w-full object-contain"
+          className="h-auto w-full object-contain rounded-2xl"
         />
       </div>
     </section>
