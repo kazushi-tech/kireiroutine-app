@@ -779,7 +779,7 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-slate-900 py-6 px-4 sm:px-6">
+    <main className="min-h-screen bg-slate-900 py-6 px-4 sm:px-6 pb-28">
       <div className="mx-auto max-w-5xl rounded-[32px] bg-gradient-to-br from-emerald-50 to-sky-50 p-4 sm:p-6 lg:p-8 shadow-xl">
         {/* ヘッダー */}
         <header className="flex items-center justify-between gap-4">
@@ -804,10 +804,10 @@ const CalendarPage: React.FC = () => {
           </div>
         </header>
 
-        {/* メインレイアウト */}
+        {/* メインレイアウト - モバイルではカレンダーが先 */}
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          {/* 左：今週の掃除タスク */}
-          <section className="rounded-3xl bg-white/80 p-4 sm:p-6 shadow-md flex flex-col h-full">
+          {/* 掃除タスク (モバイルでは2番目、デスクトップでは1番目) */}
+          <section className="order-2 lg:order-1 rounded-3xl bg-white/80 p-4 sm:p-6 shadow-md flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base sm:text-lg font-semibold text-slate-900">
@@ -915,8 +915,8 @@ const CalendarPage: React.FC = () => {
             </div>
           </section>
 
-          {/* 右：カレンダー */}
-          <section className="rounded-3xl bg-white/80 p-4 sm:p-6 shadow-md flex flex-col">
+          {/* カレンダー (モバイルでは1番目、デスクトップでは2番目) */}
+          <section className="order-1 lg:order-2 rounded-3xl bg-white/80 p-4 sm:p-6 shadow-md flex flex-col">
             {/* カレンダーヘッダー */}
             <div className="flex items-center justify-between gap-3">
               <div>

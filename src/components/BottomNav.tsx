@@ -17,26 +17,28 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-lg safe-area-bottom">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-orange-50 to-amber-50/90 backdrop-blur-sm border-t border-orange-200/50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      <div className="flex justify-around items-center h-20 max-w-lg mx-auto pb-2">
         {tabs.map(({ id, label, icon: Icon }) => {
           const isActive = activeTab === id;
           return (
             <button
               key={id}
               onClick={() => onTabChange(id)}
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+              className={`relative flex flex-col items-center justify-center flex-1 h-full pt-2 transition-all ${
                 isActive
                   ? 'text-orange-600'
-                  : 'text-slate-400 hover:text-slate-600'
+                  : 'text-slate-400 hover:text-orange-500'
               }`}
             >
-              <Icon className={`h-5 w-5 mb-1 ${isActive ? 'stroke-[2.5]' : ''}`} />
-              <span className={`text-xs ${isActive ? 'font-bold' : 'font-medium'}`}>
+              <div className={`p-2 rounded-xl transition-all ${isActive ? 'bg-orange-100' : ''}`}>
+                <Icon className={`h-5 w-5 ${isActive ? 'stroke-[2.5]' : ''}`} />
+              </div>
+              <span className={`text-xs mt-1 ${isActive ? 'font-bold' : 'font-medium'}`}>
                 {label}
               </span>
               {isActive && (
-                <span className="absolute bottom-1 w-1 h-1 rounded-full bg-orange-500" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-orange-400" />
               )}
             </button>
           );
@@ -47,3 +49,4 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
 };
 
 export default BottomNav;
+
