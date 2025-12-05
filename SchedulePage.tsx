@@ -322,6 +322,22 @@ const SchedulePage: React.FC = () => {
           </div>
         </section>
 
+        {/* 頻度別インフォグラフィック */}
+        {displayedSections.length > 0 && (
+          <div className="flex flex-col items-center">
+            <img
+              src={frequencyDisplayData[activeFrequency].imageSrc}
+              alt={frequencyDisplayData[activeFrequency].imageAlt}
+              className="w-full max-w-[600px] rounded-2xl shadow-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setZoomedImage({
+                src: frequencyDisplayData[activeFrequency].imageSrc,
+                alt: frequencyDisplayData[activeFrequency].imageAlt
+              })}
+            />
+            <p className="text-xs text-slate-500 mt-2">※ タップで拡大</p>
+          </div>
+        )}
+
         {/* 効率的な作業順序ガイド */}
         {displayedSections.length > 0 && (
           <CollapsibleSection
