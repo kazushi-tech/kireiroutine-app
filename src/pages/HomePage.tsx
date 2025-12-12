@@ -6,21 +6,36 @@ import AboutSection from '../components/AboutSection';
 import SkillsSection from '../components/SkillsSection';
 import ContactSection from '../components/ContactSection';
 import Footer from '../components/Footer';
+import { useDocumentHead } from '../hooks/useDocumentHead';
 
 const HomePage: React.FC = () => {
+  useDocumentHead({
+    title: undefined, // Use default title for home
+    description: 'Webマーケティング × AIツール × フロントエンド開発で、「めんどうだけど大事なこと」を仕組み化するクリエイター。KireiRoutine、AI News Bot、Concept Visualsなど個人開発プロジェクトを公開中。',
+  });
+
   return (
     <div className="relative w-full min-h-screen overflow-x-hidden bg-background text-slate-50 font-sans">
+      {/* Skip to main content link for keyboard users */}
+      <a 
+        href="#projects" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-neon-cyan focus:text-slate-900 focus:font-semibold focus:rounded-md focus:outline-none"
+      >
+        メインコンテンツへスキップ
+      </a>
+
       {/* Background Star layer simulation */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-20" 
            style={{
              backgroundImage: `radial-gradient(white 1px, transparent 1px)`,
              backgroundSize: '40px 40px'
-           }}>
+           }}
+           aria-hidden="true">
       </div>
       
       <Header />
       
-      <main className="relative z-10 flex flex-col">
+      <main id="main-content" className="relative z-10 flex flex-col" role="main">
         <Hero />
         <ProjectsSection />
         <AboutSection />

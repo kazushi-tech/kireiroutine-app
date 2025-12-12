@@ -57,18 +57,17 @@ const RotatingShape = () => {
 
   return (
     <mesh ref={meshRef} position={[0, 0, 0]}>
-      {/* Increased segments for smoother chrome reflections */}
-      <torusKnotGeometry args={[1.2, 0.4, 250, 32]} />
+      {/* Balanced size - visible but not overwhelming */}
+      <torusKnotGeometry args={[1.1, 0.35, 250, 32]} />
       {/* 
-        Updated Material: Chrome/Silver
-        color: Bright silver (#d4d7dd)
-        roughness: Low for sharp reflections
-        metalness: Max for chrome look
-        emissive: Removed to keep it achromatic
+        Updated Material: Brilliant Chrome
+        color: Pure bright silver for maximum reflections
+        roughness: Very low for mirror-like finish
+        metalness: Max for full chrome effect
       */}
       <meshStandardMaterial 
-        color="#d4d7dd" 
-        roughness={0.12} 
+        color="#f1f5f9" 
+        roughness={0.05} 
         metalness={1.0}
         wireframe={false}
       />
@@ -112,28 +111,28 @@ const Stars = () => {
 
 const ExperienceCanvas: React.FC = () => {
   return (
-    <div className="w-full h-full min-h-[400px]">
-      <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+    <div className="w-full h-full min-h-[400px]" role="img" aria-label="回転する3Dトーラスノットのアニメーション">
+      <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
         {/* Lights - tuned for silver/chrome look */}
         
         {/* Low ambient light to keep shadows dark and contrasted */}
-        <ambientLight intensity={0.2} />
+        <ambientLight intensity={0.3} />
         
         {/* Strong White Key Light - Defines the silver shape */}
-        <directionalLight position={[5, 5, 5]} intensity={2.0} color="#ffffff" />
+        <directionalLight position={[5, 5, 5]} intensity={2.5} color="#ffffff" />
         
-        {/* Orange Rim Light - Adds the accent reflection without coloring the whole object */}
-        <directionalLight position={[-5, 5, -5]} intensity={1.5} color="#ff8a3c" />
+        {/* Orange/Red Rim Light - Dramatic accent */}
+        <directionalLight position={[-5, 3, -3]} intensity={2.0} color="#ff6b35" />
         
-        {/* Cyan Fill - Subtle cyber underlight */}
-        <pointLight position={[0, -5, 0]} intensity={0.5} color="#20e0ff" />
+        {/* Cyan Fill - Cyber underlight from below */}
+        <pointLight position={[0, -4, 2]} intensity={0.8} color="#00f0ff" />
         
         {/* Objects */}
         <RotatingShape />
         <Stars />
         
         {/* Fog for depth blending into dark background */}
-        <fog attach="fog" args={['#050608', 5, 16]} />
+        <fog attach="fog" args={['#0f172a', 5, 16]} />
       </Canvas>
     </div>
   );

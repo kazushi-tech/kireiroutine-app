@@ -15,7 +15,7 @@ const Button: React.FC<ButtonProps> = ({
   className = '',
   href
 }) => {
-  const baseStyles = "inline-flex items-center justify-center px-6 py-3 text-sm md:text-base font-bold tracking-wide transition-all duration-300 ease-out border uppercase relative overflow-hidden group";
+  const baseStyles = "inline-flex items-center justify-center px-6 py-3 text-sm md:text-base font-bold tracking-wide transition-all duration-300 ease-out border uppercase relative overflow-hidden group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
   
   // Updated colors based on new palette
   // Primary: Orange #ff8a3c

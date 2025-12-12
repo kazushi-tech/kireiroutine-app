@@ -15,8 +15,24 @@ body,
 
 body {
   margin: 0;
-  background-color: #020617; /* equivalent to bg-slate-950 */
-  color: #e5e7eb;            /* equivalent to text-slate-200 */
+  background-color: #0f172a; /* slate-900: より明るいダークグレー */
+  color: #f1f5f9; /* slate-100: より明るいテキスト色 */
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
     "Segoe UI", sans-serif;
+}
+
+/* Custom scroll indicator animation */
+@keyframes scroll-bounce {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 0.5;
+  }
+}
+
+.animate-scroll-bounce {
+  animation: scroll-bounce 2s ease-in-out infinite;
 }

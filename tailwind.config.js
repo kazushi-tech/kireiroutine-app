@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#050608',
+        background: '#0f172a', /* slate-900 */
         'neon-cyan': '#00f0ff',
         'neon-orange': '#f97316',
       },
