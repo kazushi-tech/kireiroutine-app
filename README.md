@@ -10,8 +10,8 @@
 - **Repository**: https://github.com/kazushi-tech/kireiroutine-app
 
 ## 主な機能
+<img width="2048" height="2048" alt="freepik__create-a-minimalist-highquality-app-icon-for-an-io__66811" src="https://github.com/user-attachments/assets/3dbd6927-51b5-48a8-8b18-31c9674da58e" />
 
-<img width="900" alt="Main screen" src="https://github.com/user-attachments/assets/fea8f32f-7f2b-4e9f-8fd0-02cc1852d2b" />
 
 - **Dashboard / Check**: 今日やるタスクを一覧 → ワンタップで完了
 - **Visual Calendar**: 予定と実績をカレンダーで可視化（調整も可能）
