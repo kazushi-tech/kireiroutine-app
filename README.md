@@ -1,35 +1,32 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <img width="1200" height="475" alt="KireiRoutine" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# KireiRoutine - 掃除ルーティン管理アプリ
+# KireiRoutine - 掃除ルーティン管理PWA
 
-掃除のルーティンを頻度別（週 1、月 1 など）に管理できるアプリケーションです。
+掃除タスクを頻度別（例：週1 / 月1 / 3日ごと）に管理し、次回予定日を自動で把握できる個人用PWAです。
 
-View your app in AI Studio: https://ai.studio/apps/drive/18lQn0w7miTqFAq6JP2j1UsPt1occY_eO
+- **Live Demo（Vercel）**: https://kireiroutine-app.vercel.app/
+- **Repository**: https://github.com/kazushi-tech/kireiroutine-app
 
-## 画像の管理について
+## 主な機能
+- **Dashboard / Check**：今日やるタスクを一覧 → ワンタップで完了
+- **Visual Calendar**：予定と実績をカレンダーで可視化（調整も可能）
+- **Offline First**：PWA + Service Worker でオフラインでも利用
+- **Local Persistence**：ローカルに保存して軽快に運用
 
-画像ファイルは `public/images` ディレクトリ以下に配置し、`constants.ts` の `IMAGE_URLS` でパスを管理しています。
-新しいエリアを追加する場合は、対応する画像を `public/images` に追加し、`constants.ts` に登録してください。
+## Tech Stack
+- Vite / React / TypeScript / TailwindCSS
+- Recoil（状態管理）
+- Workbox（Service Worker）
+
+## 画像の管理
+画像は `public/images` に配置し、`constants.ts` の `IMAGE_URLS` で参照先を管理しています。  
+新しい画像を追加する場合は、画像追加 → `IMAGE_URLS` に登録してください。
 
 ## Run Locally
+Prerequisites: Node.js
 
-**Prerequisites:** Node.js
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
-
-## Deployment (Netlify)
-
-This project is configured for automatic deployment to Netlify.
-
-### Build Settings
-
-- **Build command:** `npm run build`
-- **Publish directory:** `dist`
-
-When you push changes to the repository, Netlify will automatically build and deploy the new version.
+```bash
+npm install
+npm run dev
