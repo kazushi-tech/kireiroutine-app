@@ -1,4 +1,5 @@
 <div align="center">
+  <!-- ロゴやバナー画像があればここに配置 -->
   <img width="1200" height="475" alt="KireiRoutine" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
@@ -6,29 +7,33 @@
 
 掃除タスクを頻度別（例：週1 / 月1 / 3日ごと）に管理し、次回予定日を自動で把握できる個人用PWAです。
 
-- **Live Demo (Vercel)**: https://kireiroutine-app.vercel.app/
-- **Repository**: https://github.com/kazushi-tech/kireiroutine-app
+| Link | URL |
+|:-|:-|
+| **Live Demo (Vercel)** | [https://kireiroutine-app.vercel.app/](https://kireiroutine-app.vercel.app/) |
+| **Repository** | [https://github.com/kazushi-tech/kireiroutine-app](https://github.com/kazushi-tech/kireiroutine-app) |
 
 ## 主な機能
-![freepik__vertical-45-aspect-ratio-1080x1350-high-resolution__77498](https://github.com/user-attachments/assets/092a65fd-cd5b-42e4-afe6-95e23f013dfb)
 
-![freepik__vertical-45-aspect-ratio-1080x1350-high-resolution__77496](https://github.com/user-attachments/assets/de4ad223-a1f9-4bcf-a035-7ea61bac4773)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/092a65fd-cd5b-42e4-afe6-95e23f013dfb" winth="45%" alt="Feature 1" />
+  <img src="https://github.com/user-attachments/assets/de4ad223-a1f9-4bcf-a035-7ea61bac4773" width="45%" alt="Feature 2" />
+</div>
 
 - **Dashboard / Check**: 今日やるタスクを一覧 → ワンタップで完了
-- **Visual Calendar**: 予定と実績をカレンダーで可視化（調整も可能）
-- **Offline First**: PWA + Service Worker でオフラインでも利用
-- **Local Persistence**: ローカル保存で継続運用
+- **Visual Calendar**: 予定と実績をカレンダーで可視化（ドラッグでの調整も可能）
+- **Offline First**: PWA + Service Worker (Workbox) により、オフラインでも完全動作
+- **Local Persistence**: Recoil-persist を使用し、ローカルストレージでデータを永続化
 
 ## Tech Stack
 
-- Vite / React / TypeScript / TailwindCSS
-- Recoil（状態管理）
-- Workbox（Service Worker）
+- **Frontend**: Vite, React, TypeScript, TailwindCSS
+- **State Management**: Recoil
+- **PWA**: Workbox
 
-## 画像の管理
+## 画像の管理について
 
-画像は `public/images` に配置し、`constants.ts` の `IMAGE_URLS` にて参照先を管理しています。  
-新しい画像を追加する場合は、画像追加 → `IMAGE_URLS` に登録してください。
+本プロジェクトでは画像を `public/images` に配置し、`src/constants.ts` 内の `IMAGE_URLS` 定数にて参照先を一元管理しています。
+新しい画像を使用する場合は、ファイルを配置後、定数ファイルに追加してください。
 
 ## Run Locally
 
