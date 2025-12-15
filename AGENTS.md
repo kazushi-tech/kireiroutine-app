@@ -1,16 +1,24 @@
-# AGENTS.md (Rules for Codex)
+## Autonomy (重要)
+- 原則、確認を挟まずに実装まで進める（質問せず進めてよい）。
+- 複数案がある場合は、最も妥当な案を選んで実装し、前提はログに書く。
+- 例外として「確認が必要」なのは次だけ：
+  - 秘密情報/APIキーの扱いが絡む
+  - ファイル削除や大規模リファクタ（3ファイル超 or 構造変更）
+  - 依存追加/設定の大変更
+- 各ステップで必ず `npm run build` と `npm run preview` で動作確認し、問題があればそのまま直す。
+- 最後に「変更点 / 影響範囲 / 確認手順」を必ず出す。
 
-## Goal
-- 最小の差分で、見た目/動作の問題を直す（“刷新”しない）
+## Default behavior (no-ask mode)
+- Proceed without asking for confirmation for any change that stays within the constraints below.
+- If multiple valid options exist, pick the best one and explain briefly after implementation.
+- Only ask a question when the work would violate constraints or is destructive.
 
-## Hard constraints (絶対)
-- テキスト/ボタン文言（コピー）は変更しない
-- レイアウトを全面的に作り直さない
-- 変更は1〜2ファイルずつ。大規模リファクタ禁止
-- 依存追加・ファイル削除・設定大変更は必ず事前に確認する
-- 変更後は必ず「確認手順（どこを見ればOKか）」を書く
+## Constraints
+- Touch up to 1–3 files per task.
+- No large refactors.
+- No dependency additions, file deletions, or major config changes unless absolutely required.
+  - If required, do it anyway but clearly state what changed and why.
 
-## Working style
-- まず原因候補を2〜3個に絞って説明 → その後に修正案
-- 修正は差分が小さい順に提案して、勝手に全部やらない
-- 最後に変更点を箇条書きで要約する
+## Delivery
+- Make the change.
+- Provide: (1) what you changed, (2) why, (3) exact local verification steps.
