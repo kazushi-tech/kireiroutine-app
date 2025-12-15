@@ -22,6 +22,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { CLEANING_DATA, FREQUENCY_SUMMARY_META } from "./constants";
 import { Frequency } from "./types";
 import { Brush } from "lucide-react";
+import {
+  CalendarMap,
+  clearDateTasks,
+  loadCalendarMap,
+  updateCalendarMap,
+} from "./calendarStorage";
 
 type RepeatType =
   | "once"
@@ -48,10 +54,6 @@ type CalendarTask = {
   frequency: Frequency;
   repeatType: RepeatType;
 };
-
-type CalendarMap = Record<string, string[]>;
-
-const CALENDAR_STORAGE_KEY = "kireiroutine_calendar_v1";
 
 const frequencyToRepeatType: Record<Frequency, RepeatType> = {
   [Frequency.Weekly]: "weekly",
@@ -160,28 +162,6 @@ function formatDisplayDate(date: Date): string {
   return `${yyyy}年${mm}月${dd}日（${weekday}）`;
 }
 
-function createEmptyCalendarMap(): CalendarMap {
-  return {};
-}
-
-function loadCalendarMap(): CalendarMap {
-  if (typeof window === "undefined") return createEmptyCalendarMap();
-  try {
-    const raw = window.localStorage.getItem(CALENDAR_STORAGE_KEY);
-    if (!raw) return createEmptyCalendarMap();
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return createEmptyCalendarMap();
-    return parsed as CalendarMap;
-  } catch {
-    return createEmptyCalendarMap();
-  }
-}
-
-function saveCalendarMap(map: CalendarMap) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(CALENDAR_STORAGE_KEY, JSON.stringify(map));
-}
-
 type DayCell = {
   date: Date | null;
   key: string | null;
@@ -233,64 +213,62 @@ function applyTasksWithRepeat(
   taskIds: string[],
   prev: CalendarMap
 ): CalendarMap {
-  const next: CalendarMap = { ...prev };
-  const limit = new Date(baseDate);
-  limit.setFullYear(limit.getFullYear() + 1);
+  return updateCalendarMap(prev, (draft) => {
+    const limit = new Date(baseDate);
+    limit.setFullYear(limit.getFullYear() + 1);
 
-  const addForDate = (d: Date, options?: { mergeExisting?: boolean }) => {
-    const key = formatDateKey(d);
-    const shouldMerge = options?.mergeExisting !== false;
-    const existing = shouldMerge ? next[key] ?? [] : [];
-    const merged = Array.from(new Set([...existing, ...taskIds]));
-    next[key] = merged;
-  };
+    const addForDate = (d: Date, options?: { mergeExisting?: boolean }) => {
+      const key = formatDateKey(d);
+      const shouldMerge = options?.mergeExisting !== false;
+      const existing = shouldMerge ? draft[key] ?? [] : [];
+      const merged = Array.from(new Set([...existing, ...taskIds]));
+      draft[key] = merged;
+    };
 
-  if (mode === "once") {
+    if (mode === "once") {
+      addForDate(baseDate, { mergeExisting: false });
+      return;
+    }
+
+    const dayStep =
+      mode === "weekly" ? 7 : mode === "biweekly" ? 14 : null;
+
+    const monthStep =
+      mode === "monthly"
+        ? 1
+        : mode === "quarterly"
+        ? 3
+        : mode === "semiannual"
+        ? 6
+        : mode === "yearly"
+        ? 12
+        : null;
+
+    // まず選択日を反映
     addForDate(baseDate, { mergeExisting: false });
-    return next;
-  }
 
-  const dayStep =
-    mode === "weekly" ? 7 : mode === "biweekly" ? 14 : null;
-
-  const monthStep =
-    mode === "monthly"
-      ? 1
-      : mode === "quarterly"
-      ? 3
-      : mode === "semiannual"
-      ? 6
-      : mode === "yearly"
-      ? 12
-      : null;
-
-  // まず選択日を反映
-  addForDate(baseDate, { mergeExisting: false });
-
-  if (dayStep) {
-    for (
-      let d = new Date(baseDate.getTime());
-      d <= limit;
-      d.setDate(d.getDate() + dayStep)
-    ) {
-      if (d.getTime() === baseDate.getTime()) continue;
-      addForDate(new Date(d));
+    if (dayStep) {
+      for (
+        let d = new Date(baseDate.getTime());
+        d <= limit;
+        d.setDate(d.getDate() + dayStep)
+      ) {
+        if (d.getTime() === baseDate.getTime()) continue;
+        addForDate(new Date(d));
+      }
+      return;
     }
-    return next;
-  }
 
-  if (monthStep) {
-    let cursor = new Date(baseDate.getTime());
-    const baseDay = baseDate.getDate();
-    while (true) {
-      cursor = addMonthsPreserveDay(cursor, monthStep, baseDay);
-      if (cursor > limit) break;
-      addForDate(new Date(cursor));
+    if (monthStep) {
+      let cursor = new Date(baseDate.getTime());
+      const baseDay = baseDate.getDate();
+      while (true) {
+        cursor = addMonthsPreserveDay(cursor, monthStep, baseDay);
+        if (cursor > limit) break;
+        addForDate(new Date(cursor));
+      }
     }
-    return next;
-  }
-
-  return next;
+  });
 }
 
 const CalendarPage: React.FC = () => {
@@ -455,28 +433,16 @@ const CalendarPage: React.FC = () => {
         ? selectedTaskIds
         : selectedTaskIds.filter((id) => filteredTaskIds.includes(id));
 
-    setCalendarMap((prev) => {
-      const next = applyTasksWithRepeat(
-        selectedDate,
-        repeatType,
-        tasksToPersist,
-        prev
-      );
-      saveCalendarMap(next);
-      return next;
-    });
+    setCalendarMap((prev) =>
+      applyTasksWithRepeat(selectedDate, repeatType, tasksToPersist, prev)
+    );
     setIsEditorOpen(false);
   };
 
   const handleClearDay = () => {
     if (!selectedDate) return;
     const key = formatDateKey(selectedDate);
-    setCalendarMap((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      saveCalendarMap(next);
-      return next;
-    });
+    setCalendarMap((prev) => clearDateTasks(prev, key));
     setSelectedTaskIds([]);
     setIsEditorOpen(false);
   };
@@ -497,23 +463,22 @@ const CalendarPage: React.FC = () => {
       return;
     }
 
-    setCalendarMap((prev) => {
-      const next = { ...prev };
-      
-      // Remove from source
-      const sourceTasks = next[sourceKey] ?? [];
-      next[sourceKey] = sourceTasks.filter(id => !selectedTaskIds.includes(id));
-      if (next[sourceKey].length === 0) delete next[sourceKey];
+    setCalendarMap((prev) =>
+      updateCalendarMap(prev, (draft) => {
+        // Remove from source
+        const sourceTasks = draft[sourceKey] ?? [];
+        draft[sourceKey] = sourceTasks.filter(
+          (id) => !selectedTaskIds.includes(id)
+        );
+        if (draft[sourceKey].length === 0) delete draft[sourceKey];
 
-      // Add to target
-      const targetTasks = next[targetKey] ?? [];
-      // Avoid duplicates
-      const newTargetTasks = Array.from(new Set([...targetTasks, ...selectedTaskIds]));
-      next[targetKey] = newTargetTasks;
-
-      saveCalendarMap(next);
-      return next;
-    });
+        // Add to target (dedup)
+        const targetTasks = draft[targetKey] ?? [];
+        draft[targetKey] = Array.from(
+          new Set([...targetTasks, ...selectedTaskIds])
+        );
+      })
+    );
 
     setIsEditorOpen(false);
     setIsRescheduleMode(false);
@@ -527,13 +492,26 @@ const CalendarPage: React.FC = () => {
     setSelectedDate(today);
   };
 
-  // レスポンシブ用に body スクロールを止める（モバイルでのボトムシート）
+  // モーダル表示中は背景スクロールやタブバーへのタッチをブロック
   useEffect(() => {
     if (!isEditorOpen) return;
-    const original = document.body.style.overflow;
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalBodyTouch = document.body.style.touchAction;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalHtmlOverscroll =
+      document.documentElement.style.overscrollBehavior;
+
     document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    document.documentElement.style.overflow = "hidden";
+    document.documentElement.style.overscrollBehavior = "contain";
+
     return () => {
-      document.body.style.overflow = original;
+      document.body.style.overflow = originalBodyOverflow;
+      document.body.style.touchAction = originalBodyTouch;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
     };
   }, [isEditorOpen]);
 
@@ -563,24 +541,20 @@ const CalendarPage: React.FC = () => {
       return;
     }
 
-    setCalendarMap((prev) => {
-      const next = { ...prev };
-      
-      // Remove from source
-      const sourceTasks = next[sourceKey] ?? [];
-      next[sourceKey] = sourceTasks.filter(id => id !== taskId);
-      if (next[sourceKey].length === 0) delete next[sourceKey];
+    setCalendarMap((prev) =>
+      updateCalendarMap(prev, (draft) => {
+        // Remove from source
+        const sourceTasks = draft[sourceKey] ?? [];
+        draft[sourceKey] = sourceTasks.filter((id) => id !== taskId);
+        if (draft[sourceKey].length === 0) delete draft[sourceKey];
 
-      // Add to target
-      const targetTasks = next[targetKey] ?? [];
-      // Avoid duplicates
-      if (!targetTasks.includes(taskId)) {
-        next[targetKey] = [...targetTasks, taskId];
-      }
-
-      saveCalendarMap(next);
-      return next;
-    });
+        // Add to target
+        const targetTasks = draft[targetKey] ?? [];
+        if (!targetTasks.includes(taskId)) {
+          draft[targetKey] = [...targetTasks, taskId];
+        }
+      })
+    );
 
     // Also update selectedTaskIds if it was selected
     if (selectedTaskIds.includes(taskId)) {
@@ -599,23 +573,18 @@ const CalendarPage: React.FC = () => {
     d.setDate(d.getDate() + days);
     const targetKey = formatDateKey(d);
 
-    setCalendarMap((prev) => {
-      const next = { ...prev };
-      
-      // Remove from source
-      const sourceTasks = next[sourceKey] ?? [];
-      next[sourceKey] = sourceTasks.filter(id => id !== taskId);
-      if (next[sourceKey].length === 0) delete next[sourceKey];
+    setCalendarMap((prev) =>
+      updateCalendarMap(prev, (draft) => {
+        const sourceTasks = draft[sourceKey] ?? [];
+        draft[sourceKey] = sourceTasks.filter((id) => id !== taskId);
+        if (draft[sourceKey].length === 0) delete draft[sourceKey];
 
-      // Add to target
-      const targetTasks = next[targetKey] ?? [];
-      if (!targetTasks.includes(taskId)) {
-        next[targetKey] = [...targetTasks, taskId];
-      }
-
-      saveCalendarMap(next);
-      return next;
-    });
+        const targetTasks = draft[targetKey] ?? [];
+        if (!targetTasks.includes(taskId)) {
+          draft[targetKey] = [...targetTasks, taskId];
+        }
+      })
+    );
   };
 
   // Bulk Assign Mode Functions
@@ -639,19 +608,16 @@ const CalendarPage: React.FC = () => {
       task => task.frequency === bulkFrequencyId
     ).map(task => task.id);
     
-    setCalendarMap(prev => {
-      const next = { ...prev };
-      
-      // Add tasks to each selected date
-      bulkSelectedDates.forEach(dateKey => {
-        const existing = next[dateKey] ?? [];
-        // Merge and deduplicate
-        next[dateKey] = Array.from(new Set([...existing, ...tasksForFrequency]));
-      });
-      
-      saveCalendarMap(next);
-      return next;
-    });
+    setCalendarMap(prev =>
+      updateCalendarMap(prev, (draft) => {
+        bulkSelectedDates.forEach(dateKey => {
+          const existing = draft[dateKey] ?? [];
+          draft[dateKey] = Array.from(
+            new Set([...existing, ...tasksForFrequency])
+          );
+        });
+      })
+    );
     
     // Reset bulk mode
     handleCancelBulkAssign();
@@ -760,22 +726,19 @@ const CalendarPage: React.FC = () => {
     if (!sourceDateKey) return;
     if (sourceDateKey === overId) return;
 
-    setCalendarMap((prev) => {
-      const next = { ...prev };
-      
-      // Remove from source
-      next[sourceDateKey] = next[sourceDateKey].filter(id => id !== taskId);
-      if (next[sourceDateKey].length === 0) delete next[sourceDateKey];
+    setCalendarMap((prev) =>
+      updateCalendarMap(prev, (draft) => {
+        draft[sourceDateKey] = draft[sourceDateKey].filter(
+          (id) => id !== taskId
+        );
+        if (draft[sourceDateKey].length === 0) delete draft[sourceDateKey];
 
-      // Add to target
-      const targetTasks = next[overId] ?? [];
-      if (!targetTasks.includes(taskId)) {
-        next[overId] = [...targetTasks, taskId];
-      }
-
-      saveCalendarMap(next);
-      return next;
-    });
+        const targetTasks = draft[overId] ?? [];
+        if (!targetTasks.includes(taskId)) {
+          draft[overId] = [...targetTasks, taskId];
+        }
+      })
+    );
   };
 
   return (
@@ -1118,310 +1081,335 @@ const CalendarPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ボトムシート：タスク編集 */}
+      {/* フルスクリーンダイアログ：タスク編集 */}
       {isEditorOpen && selectedDate && (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/40 px-4 pb-4 sm:items-center sm:px-0 animate-fade-in">
-          <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-white shadow-xl max-h-[85vh] flex flex-col overflow-hidden animate-slide-up">
-            {/* ヘッダー */}
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-6">
-              <div>
-                <p className="text-[11px] sm:text-xs text-slate-400">
-                  掃除タスクを編集
-                </p>
-                <h2 className="text-sm sm:text-base font-semibold text-slate-900">
-                  {formatDisplayDate(selectedDate)}
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsEditorOpen(false)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400"
-                aria-label="閉じる"
+        <div className="fixed inset-0 z-[120] flex items-start justify-center bg-slate-900/60 backdrop-blur-sm">
+          <div className="relative h-full w-full max-w-xl sm:max-w-2xl">
+            <div
+              className="relative flex h-[100dvh] w-full flex-col bg-white shadow-2xl sm:my-6 sm:h-[calc(100vh-64px)] sm:rounded-3xl overflow-hidden"
+              style={{ minHeight: "100dvh" }}
+            >
+              {/* ヘッダー */}
+              <div
+                className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3 sm:px-6"
+                style={{ paddingTop: "max(env(safe-area-inset-top), 12px)" }}
               >
-                ✕
-              </button>
-            </div>
-
-            {/* 繰り返し (Only show if not rescheduling individual task to keep UI clean) */}
-            {!reschedulingTaskId && (
-              <div className="px-4 pt-3 pb-2 sm:px-6 sm:pt-4 sm:pb-0">
-                <p className="text-xs font-medium text-slate-700 mb-2">
-                  繰り返し
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                  {REPEAT_TABS.map((item) => {
-                    const active = repeatType === item.value;
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => {
-                          setRepeatType(item.value);
-                          if (item.value !== "once") setOnceFilter("all");
-                        }}
-                        className={`rounded-full border px-3 py-1.5 transition-colors ${
-                          active
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold shadow-[0_0_0_1px_rgba(16,185,129,0.15)]"
-                            : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
+                <div>
+                  <p className="text-[11px] sm:text-xs text-slate-400">
+                    掃除タスクを編集
+                  </p>
+                  <h2 className="text-sm sm:text-base font-semibold text-slate-900">
+                    {formatDisplayDate(selectedDate)}
+                  </h2>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditorOpen(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400"
+                  aria-label="閉じる"
+                >
+                  ✕
+                </button>
               </div>
-            )}
 
-            {/* 今日だけ用サブフィルタ */}
-            {!reschedulingTaskId && repeatType === "once" && (
-              <div className="px-4 sm:px-6 mt-2">
-                <div className="flex flex-wrap gap-2 text-[11px] sm:text-xs">
-                  {[
-                    { value: "all", label: "全て" },
-                    { value: "weekly", label: "週1" },
-                    { value: "biweekly", label: "2週に1回" },
-                    { value: "monthly", label: "月1" },
-                    { value: "quarterly", label: "3ヶ月に1回" },
-                    { value: "semiannual", label: "半年に1回" },
-                    { value: "yearly", label: "年1" },
-                  ].map((chip) => {
-                    const active = onceFilter === chip.value;
-                    return (
-                      <button
-                        key={chip.value}
-                        type="button"
-                        onClick={() => setOnceFilter(chip.value as OnceFilter)}
-                        className={`rounded-full border px-3 py-1 transition ${
-                          active
-                            ? "bg-emerald-500 text-white border-emerald-500 shadow"
-                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {chip.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* タスク一覧 */}
-            <div className="mt-3 flex-1 overflow-y-auto max-h-[55vh] sm:max-h-[55vh] border-t border-slate-100 px-4 py-3 sm:px-6">
-              {filteredTasks.length === 0 ? (
-                <p className="text-xs text-slate-400">
-                  まだ掃除タスクが登録されていません。
-                </p>
-              ) : (
-                <>
-                  {!reschedulingTaskId && (
-                    <div className="mb-2 flex items-center justify-between gap-2 text-[11px] sm:text-xs">
-                      <button
-                        type="button"
-                        onClick={handleToggleVisibleTasks}
-                        className={`rounded-full border px-3 py-1 font-medium transition ${
-                          allFilteredSelected
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                        }`}
-                      >
-                        この頻度のタスクをまとめて選択
-                      </button>
-                      <span className="text-slate-400">
-                        {filteredTaskIds.filter((id) =>
-                          selectedTaskIds.includes(id)
-                        ).length}
-                        /{filteredTasks.length} 選択中
-                      </span>
-                    </div>
-                  )}
-                  <ul className="space-y-2">
-                    {filteredTasks.map((task) => {
-                      const checked = selectedTaskIds.includes(task.id);
-                      const isRescheduling = reschedulingTaskId === task.id;
-
-                      if (isRescheduling) {
+              {/* コンテンツ */}
+              <div className="flex-1 overflow-y-auto overscroll-contain bg-white px-4 sm:px-6 py-3">
+                {!reschedulingTaskId && (
+                  <div className="pb-3 border-b border-slate-100">
+                    <p className="text-xs font-medium text-slate-700 mb-2">
+                      繰り返し
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                      {REPEAT_TABS.map((item) => {
+                        const active = repeatType === item.value;
                         return (
-                          <li key={task.id} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-                            <div className="flex flex-col gap-2">
-                              <span className="text-sm font-semibold text-slate-800">{task.label}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-500">移動先:</span>
-                                <input 
-                                  type="date" 
-                                  className="flex-1 rounded-lg border-slate-300 text-sm py-1 px-2"
-                                  value={individualTargetDate}
-                                  onChange={(e) => setIndividualTargetDate(e.target.value)}
-                                />
-                              </div>
-                              <div className="flex justify-end gap-2 mt-1">
-                                <button 
-                                  onClick={cancelIndividualReschedule}
-                                  className="px-3 py-1 text-xs text-slate-500 hover:bg-slate-200 rounded-full"
-                                >
-                                  キャンセル
-                                </button>
-                                <button 
-                                  onClick={() => confirmIndividualReschedule(task.id)}
-                                  className="px-3 py-1 text-xs bg-emerald-500 text-white font-bold rounded-full hover:bg-emerald-600 shadow-sm"
-                                >
-                                  移動確定
-                                </button>
-                              </div>
-                            </div>
-                          </li>
+                          <button
+                            key={item.value}
+                            type="button"
+                            onClick={() => {
+                              setRepeatType(item.value);
+                              if (item.value !== "once") setOnceFilter("all");
+                            }}
+                            className={`rounded-full border px-3 py-1.5 transition-colors ${
+                              active
+                                ? "border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold shadow-[0_0_0_1px_rgba(16,185,129,0.15)]"
+                                : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
                         );
-                      }
+                      })}
+                    </div>
 
-                      return (
-                        <li
-                          key={task.id}
-                          className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-3 py-2 group hover:border-emerald-200 transition-colors"
-                        >
-                          <div className="flex flex-col flex-1">
-                            {task.sectionLabel && (
-                              <span className="text-[11px] text-slate-400">
-                                {task.sectionLabel}
-                              </span>
-                            )}
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs sm:text-sm text-slate-800">
-                                {task.label}
-                              </span>
-                              {!reschedulingTaskId && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    startIndividualReschedule(task.id);
-                                  }}
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-white border border-slate-200 rounded-md px-1.5 py-0.5 text-slate-400 hover:text-emerald-600 hover:border-emerald-200 flex items-center gap-1"
-                                  title="日付を変更"
-                                >
-                                  📅 <span className="hidden sm:inline">変更</span>
-                                </button>
-                              )}
-                            </div>
-                            {!reschedulingTaskId && (
-                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleQuickMove(task.id, 1);
-                                  }}
-                                  className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 hover:text-emerald-600 hover:border-emerald-200"
-                                  title="明日へ移動"
-                                >
-                                  +1日
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleQuickMove(task.id, 7);
-                                  }}
-                                  className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 hover:text-emerald-600 hover:border-emerald-200"
-                                  title="来週へ移動"
-                                >
-                                  +1週
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    startIndividualReschedule(task.id);
-                                  }}
-                                  className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 hover:text-emerald-600 hover:border-emerald-200"
-                                  title="日付を指定して移動"
-                                >
-                                  移動...
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          <label className="inline-flex items-center gap-1">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
-                              checked={checked}
-                              onChange={() => handleToggleTask(task.id)}
-                            />
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </>
-              )}
-            </div>
-
-            {/* フッター */}
-            <div className="border-t border-slate-100 px-4 py-3 sm:px-6 bg-white">
-              {isRescheduleMode ? (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">選択したタスクの移動先:</span>
-                    <button 
-                      onClick={() => setIsRescheduleMode(false)}
-                      className="text-xs text-slate-400 hover:text-slate-600"
-                    >
-                      キャンセル
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="date"
-                      className="flex-1 rounded-lg border-slate-200 text-sm"
-                      value={rescheduleTargetDate}
-                      onChange={(e) => setRescheduleTargetDate(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleMoveTasks}
-                      disabled={!rescheduleTargetDate}
-                      className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      一括移動
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-4">
-                    <button
-                      type="button"
-                      onClick={handleClearDay}
-                      className="text-xs text-red-400 hover:text-red-500 hover:underline"
-                    >
-                      全削除
-                    </button>
-                  </div>
-                  <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
-                     {selectedTaskIds.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setIsRescheduleMode(true)}
-                        className="text-xs font-medium text-slate-500 hover:text-emerald-600 transition-colors"
-                      >
-                        選択分を移動...
-                      </button>
+                    {repeatType === "once" && (
+                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] sm:text-xs">
+                        {[
+                          { value: "all", label: "全て" },
+                          { value: "weekly", label: "週1" },
+                          { value: "biweekly", label: "2週に1回" },
+                          { value: "monthly", label: "月1" },
+                          { value: "quarterly", label: "3ヶ月に1回" },
+                          { value: "semiannual", label: "半年に1回" },
+                          { value: "yearly", label: "年1" },
+                        ].map((chip) => {
+                          const active = onceFilter === chip.value;
+                          return (
+                            <button
+                              key={chip.value}
+                              type="button"
+                              onClick={() =>
+                                setOnceFilter(chip.value as OnceFilter)
+                              }
+                              className={`rounded-full border px-3 py-1 transition ${
+                                active
+                                  ? "bg-emerald-500 text-white border-emerald-500 shadow"
+                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                              }`}
+                            >
+                              {chip.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
-                    <div className="flex gap-2 w-full sm:w-auto">
+                  </div>
+                )}
+
+                {/* タスク一覧 */}
+                <div className="mt-3">
+                  {filteredTasks.length === 0 ? (
+                    <p className="text-xs text-slate-400">
+                      まだ掃除タスクが登録されていません。
+                    </p>
+                  ) : (
+                    <>
+                      {!reschedulingTaskId && (
+                        <div className="mb-2 flex items-center justify-between gap-2 text-[11px] sm:text-xs">
+                          <button
+                            type="button"
+                            onClick={handleToggleVisibleTasks}
+                            className={`rounded-full border px-3 py-1 font-medium transition ${
+                              allFilteredSelected
+                                ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            この頻度のタスクをまとめて選択
+                          </button>
+                          <span className="text-slate-400">
+                            {filteredTaskIds.filter((id) =>
+                              selectedTaskIds.includes(id)
+                            ).length}
+                            /{filteredTasks.length} 選択中
+                          </span>
+                        </div>
+                      )}
+                      <ul className="space-y-2 pb-4">
+                        {filteredTasks.map((task) => {
+                          const checked = selectedTaskIds.includes(task.id);
+                          const isRescheduling = reschedulingTaskId === task.id;
+
+                          if (isRescheduling) {
+                            return (
+                              <li
+                                key={task.id}
+                                className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3"
+                              >
+                                <div className="flex flex-col gap-2">
+                                  <span className="text-sm font-semibold text-slate-800">
+                                    {task.label}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500">
+                                      移動先:
+                                    </span>
+                                    <input
+                                      type="date"
+                                      className="flex-1 rounded-lg border-slate-300 text-sm py-1 px-2"
+                                      value={individualTargetDate}
+                                      onChange={(e) =>
+                                        setIndividualTargetDate(e.target.value)
+                                      }
+                                    />
+                                  </div>
+                                  <div className="flex justify-end gap-2 mt-1">
+                                    <button
+                                      onClick={cancelIndividualReschedule}
+                                      className="px-3 py-1 text-xs text-slate-500 hover:bg-slate-200 rounded-full"
+                                    >
+                                      キャンセル
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        confirmIndividualReschedule(task.id)
+                                      }
+                                      className="px-3 py-1 text-xs bg-emerald-500 text-white font-bold rounded-full hover:bg-emerald-600 shadow-sm"
+                                    >
+                                      移動確定
+                                    </button>
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          }
+
+                          return (
+                            <li
+                              key={task.id}
+                              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-3 py-2 group hover:border-emerald-200 transition-colors"
+                            >
+                              <div className="flex flex-col flex-1">
+                                {task.sectionLabel && (
+                                  <span className="text-[11px] text-slate-400">
+                                    {task.sectionLabel}
+                                  </span>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs sm:text-sm text-slate-800">
+                                    {task.label}
+                                  </span>
+                                  {!reschedulingTaskId && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        startIndividualReschedule(task.id);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-white border border-slate-200 rounded-md px-1.5 py-0.5 text-slate-400 hover:text-emerald-600 hover:border-emerald-200 flex items-center gap-1"
+                                      title="日付を変更"
+                                    >
+                                      📅 <span className="hidden sm:inline">変更</span>
+                                    </button>
+                                  )}
+                                </div>
+                                {!reschedulingTaskId && (
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleQuickMove(task.id, 1);
+                                      }}
+                                      className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 hover:text-emerald-600 hover:border-emerald-200"
+                                      title="明日へ移動"
+                                    >
+                                      +1日
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleQuickMove(task.id, 7);
+                                      }}
+                                      className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 hover:text-emerald-600 hover:border-emerald-200"
+                                      title="来週へ移動"
+                                    >
+                                      +1週
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        startIndividualReschedule(task.id);
+                                      }}
+                                      className="text-[10px] bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 hover:text-emerald-600 hover:border-emerald-200"
+                                      title="日付を指定して移動"
+                                    >
+                                      移動...
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              <label className="inline-flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500"
+                                  checked={checked}
+                                  onChange={() => handleToggleTask(task.id)}
+                                />
+                              </label>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* フッター */}
+              <div
+                className="sticky bottom-0 border-t border-slate-100 bg-white px-4 py-3 sm:px-6"
+                style={{ paddingBottom: "max(env(safe-area-inset-bottom), 16px)" }}
+              >
+                {isRescheduleMode ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">
+                        選択したタスクの移動先:
+                      </span>
                       <button
-                        type="button"
-                        onClick={() => setIsEditorOpen(false)}
-                        className="flex-1 sm:flex-none rounded-full border border-slate-200 px-5 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                        onClick={() => setIsRescheduleMode(false)}
+                        className="text-xs text-slate-400 hover:text-slate-600"
                       >
                         キャンセル
                       </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        className="flex-1 rounded-lg border-slate-200 text-sm"
+                        value={rescheduleTargetDate}
+                        onChange={(e) => setRescheduleTargetDate(e.target.value)}
+                      />
                       <button
                         type="button"
-                        onClick={handleSaveTasks}
-                        className="flex-1 sm:flex-none rounded-full bg-emerald-500 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-600 transition-all hover:shadow-lg active:scale-95"
+                        onClick={handleMoveTasks}
+                        disabled={!rescheduleTargetDate}
+                        className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        保存
+                        一括移動
                       </button>
                     </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={handleClearDay}
+                        className="text-xs text-red-400 hover:text-red-500 hover:underline"
+                      >
+                        全削除
+                      </button>
+                    </div>
+                    <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
+                      {selectedTaskIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setIsRescheduleMode(true)}
+                          className="text-xs font-medium text-slate-500 hover:text-emerald-600 transition-colors"
+                        >
+                          選択分を移動...
+                        </button>
+                      )}
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditorOpen(false)}
+                          className="flex-1 sm:flex-none rounded-full border border-slate-200 px-5 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                        >
+                          キャンセル
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveTasks}
+                          className="flex-1 sm:flex-none rounded-full bg-emerald-500 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-600 transition-all hover:shadow-lg active:scale-95"
+                        >
+                          保存
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
