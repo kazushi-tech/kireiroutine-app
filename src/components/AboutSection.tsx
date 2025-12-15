@@ -3,7 +3,7 @@ import profileImage from '../assets/profile/omats-profile.jpg';
 
 const AboutSection: React.FC = () => {
   return (
-    <section id="about" className="py-24 bg-background relative border-t border-white/5">
+    <section id="about" className="pt-16 pb-20 md:pt-20 md:pb-24 bg-background relative border-t border-white/5">
       <div className="container mx-auto px-8 lg:px-12">
         <div className="flex flex-col md:flex-row gap-16 items-start">
           
