@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# large artifacts
+PATH/TO/BIGFILE
