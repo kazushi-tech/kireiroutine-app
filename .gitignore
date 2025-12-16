@@ -23,8 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 
-# env
-.env*
+# large artifacts
+PATH/TO/BIGFILE
+<<<<<<< HEAD
+=======
 
-# Vercel
-.vercel/
+# large icons
+public/icons/icon-512x512.png
+public/icons/icon-192x192.png
+.vercel
+.env*.local
+>>>>>>> 2e91f4d (Fix bottom nav overlap (safe-area + responsive) and improve chips scroll)

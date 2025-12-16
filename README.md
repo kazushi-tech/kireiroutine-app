@@ -1,30 +1,18 @@
-# Kazushi Portfolio
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-Personal portfolio site for showcasing projects and skills.
+# KireiRoutine - 掃除ルーティン管理アプリ
 
-## Tech Stack
-- Vite + React + TypeScript
-- React Router
-- Tailwind CSS
+掃除のルーティンを頻度別（週 1、月 1 など）に管理できるアプリケーションです。
 
-## Getting Started (Local)
-```bash
-npm install
-npm run dev
-```
+View your app in AI Studio: https://ai.studio/apps/drive/18lQn0w7miTqFAq6JP2j1UsPt1occY_eO
 
-Open: http://localhost:5173
+## 画像の管理について
 
-## Build
-```bash
-npm run build
-npm run preview -- --host
-```
+画像ファイルは `public/images` ディレクトリ以下に配置し、`constants.ts` の `IMAGE_URLS` でパスを管理しています。
+新しいエリアを追加する場合は、対応する画像を `public/images` に追加し、`constants.ts` に登録してください。
 
-<<<<<<< HEAD
-## Deploy (Vercel)
-This repo is connected to Vercel. Pushing to main triggers a production deployment.
-=======
 ## Run Locally
 
 **Prerequisites:** Node.js
@@ -96,4 +84,3 @@ This project is configured for automatic deployment to Netlify.
 - **Publish directory:** `dist`
 
 When you push changes to the repository, Netlify will automatically build and deploy the new version.
->>>>>>> 4ed9a16 (fix(calendar): iOS実機対策とモバイルUX改善)
