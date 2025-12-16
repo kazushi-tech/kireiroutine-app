@@ -288,8 +288,8 @@ const CalendarPage: React.FC = () => {
   // View Mode for Left Column
   const [viewMode, setViewMode] = useState<"summary" | "agenda">("summary");
   
-  // モバイルでの左ペイン（タスクサマリー）折りたたみ状態
-  const [isTaskPanelOpen, setIsTaskPanelOpen] = useState(false);
+  // モバイルでの左ペイン（タスクサマリー）- 常に展開状態
+  const [isTaskPanelOpen, setIsTaskPanelOpen] = useState(true);
   
   // Bulk Assign Mode
   const [isBulkAssignMode, setIsBulkAssignMode] = useState(false);
@@ -826,14 +826,8 @@ const CalendarPage: React.FC = () => {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           {/* 掃除タスク (モバイルでは2番目、デスクトップでは1番目) */}
           <section className="order-2 lg:order-1 rounded-3xl bg-white p-4 sm:p-6 shadow-sm border border-orange-100 flex flex-col">
-            {/* ヘッダー（モバイルではクリックで開閉可能） - タップ領域48px以上確保 */}
-            <button
-              type="button"
-              onClick={() => setIsTaskPanelOpen(!isTaskPanelOpen)}
-              className="lg:pointer-events-none flex items-center justify-between w-full text-left min-h-12 py-3 -mx-2 px-2 rounded-xl lg:min-h-0 lg:py-0 lg:mx-0 lg:px-0 active:bg-slate-50 lg:active:bg-transparent touch-manipulation transition-colors"
-              aria-expanded={isTaskPanelOpen}
-              aria-controls="task-panel-content"
-            >
+            {/* ヘッダー（常に展開状態） */}
+            <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base sm:text-lg font-semibold text-slate-900">
                   掃除タスク
@@ -842,39 +836,32 @@ const CalendarPage: React.FC = () => {
                   {viewMode === "summary" ? "頻度ごとの予定サマリー" : "今日〜1週間のアジェンダ"}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {/* PC: タブ切替 */}
-                <div className="hidden lg:flex bg-slate-100 rounded-lg p-1">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setViewMode("summary"); }}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                      viewMode === "summary"
-                        ? "bg-white text-slate-800 shadow-sm"
-                        : "text-slate-500 hover:text-slate-700"
-                    }`}
-                  >
-                    サマリー
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setViewMode("agenda"); }}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                      viewMode === "agenda"
-                        ? "bg-white text-slate-800 shadow-sm"
-                        : "text-slate-500 hover:text-slate-700"
-                    }`}
-                  >
-                    アジェンダ
-                  </button>
-                </div>
-                {/* Mobile: 開閉アイコン - より大きく見やすく */}
-                <div className="lg:hidden flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-full text-xs font-medium">
-                  <span>{isTaskPanelOpen ? "閉じる" : "開く"}</span>
-                  {isTaskPanelOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </div>
+              {/* PC: タブ切替 */}
+              <div className="hidden lg:flex bg-slate-100 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("summary")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                    viewMode === "summary"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  サマリー
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("agenda")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                    viewMode === "agenda"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  アジェンダ
+                </button>
               </div>
-            </button>
+            </div>
 
             {/* コンテンツ（モバイルでは条件付き表示、PCでは常に表示） */}
             <div 
