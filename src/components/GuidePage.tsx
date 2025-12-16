@@ -10,7 +10,7 @@ const GuidePage: React.FC = () => {
   const [zoomedImage, setZoomedImage] = useState<{ src: string; alt: string } | null>(null);
 
   return (
-    <main className="min-h-screen bg-[#f7f1e7] pb-24">
+    <main className="min-h-screen bg-[#f7f1e7] page-content">
       <div className="mx-auto max-w-3xl px-4 py-6 space-y-6">
         {/* ヘッダー */}
         <header className="text-center py-4">

@@ -293,6 +293,38 @@ const CalendarPage: React.FC = () => {
   const [bulkFrequencyId, setBulkFrequencyId] = useState<Frequency | null>(null);
   const [bulkSelectedDates, setBulkSelectedDates] = useState<Set<string>>(new Set());
 
+  // モーダル表示中はbodyスクロールを防止し、タブバーを隠す
+  useEffect(() => {
+    if (isEditorOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      // タブバーを隠す
+      const tabBar = document.querySelector('nav.fixed.bottom-0');
+      if (tabBar) {
+        (tabBar as HTMLElement).style.display = 'none';
+      }
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      // タブバーを表示
+      const tabBar = document.querySelector('nav.fixed.bottom-0');
+      if (tabBar) {
+        (tabBar as HTMLElement).style.display = '';
+      }
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      const tabBar = document.querySelector('nav.fixed.bottom-0');
+      if (tabBar) {
+        (tabBar as HTMLElement).style.display = '';
+      }
+    };
+  }, [isEditorOpen]);
+
   // 月のセル
   const cells = useMemo(
     () => buildMonthCells(currentYear, currentMonth),
@@ -742,7 +774,7 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-slate-900 py-6 px-4 sm:px-6 pb-28">
+    <main className="min-h-screen bg-slate-900 py-6 px-4 sm:px-6 page-content">
       <div className="mx-auto max-w-5xl rounded-[32px] bg-gradient-to-br from-emerald-50 to-sky-50 p-4 sm:p-6 lg:p-8 shadow-xl">
         {/* ヘッダー */}
         <header className="flex items-center justify-between gap-4">
@@ -1083,12 +1115,14 @@ const CalendarPage: React.FC = () => {
 
       {/* フルスクリーンダイアログ：タスク編集 */}
       {isEditorOpen && selectedDate && (
-        <div className="fixed inset-0 z-[120] flex items-start justify-center bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative h-full w-full max-w-xl sm:max-w-2xl">
-            <div
-              className="relative flex h-[100dvh] w-full flex-col bg-white shadow-2xl sm:my-6 sm:h-[calc(100vh-64px)] sm:rounded-3xl overflow-hidden"
-              style={{ minHeight: "100dvh" }}
-            >
+        <div 
+          className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm"
+          onClick={() => setIsEditorOpen(false)}
+        >
+          <div 
+            className="fixed inset-0 z-[121] flex flex-col bg-white sm:inset-x-auto sm:inset-y-6 sm:left-1/2 sm:-translate-x-1/2 sm:max-w-2xl sm:w-full sm:rounded-3xl sm:shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
               {/* ヘッダー */}
               <div
                 className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3 sm:px-6"
@@ -1112,8 +1146,8 @@ const CalendarPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* コンテンツ */}
-              <div className="flex-1 overflow-y-auto overscroll-contain bg-white px-4 sm:px-6 py-3">
+              {/* コンテンツ - フッター分の余白を確保（約120px）*/}
+              <div className="flex-1 overflow-y-auto overscroll-contain bg-white px-4 sm:px-6 py-3 pb-[120px] sm:pb-4">
                 {!reschedulingTaskId && (
                   <div className="pb-3 border-b border-slate-100">
                     <p className="text-xs font-medium text-slate-700 mb-2">
@@ -1334,10 +1368,10 @@ const CalendarPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* フッター */}
+              {/* フッター - 完全固定配置でsafe-areaを考慮 */}
               <div
-                className="sticky bottom-0 border-t border-slate-100 bg-white px-4 py-3 sm:px-6"
-                style={{ paddingBottom: "max(env(safe-area-inset-bottom), 16px)" }}
+                className="fixed bottom-0 left-0 right-0 z-[122] border-t border-slate-100 bg-white px-4 py-4 sm:static sm:z-auto sm:border-t sm:bg-white sm:px-6 sm:py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] sm:shadow-none"
+                style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
               >
                 {isRescheduleMode ? (
                   <div className="flex flex-col gap-3">
@@ -1410,7 +1444,6 @@ const CalendarPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
           </div>
         </div>
       )}

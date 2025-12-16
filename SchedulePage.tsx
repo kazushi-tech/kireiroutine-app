@@ -251,7 +251,7 @@ const SchedulePage: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#f7f1e7] px-4 py-5 pb-24 text-slate-900">
+    <main className="min-h-screen bg-[#f7f1e7] px-4 py-5 page-content text-slate-900">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
         {/* header */}
         <header className="flex flex-col gap-3 border-b border-orange-100 pb-4 md:flex-row md:items-center md:justify-between">
@@ -298,9 +298,9 @@ const SchedulePage: React.FC = () => {
           onStartSimpleMode={() => setIsSimpleMode(true)}
         />
 
-        {/* 頻度タブ - 上部に固定表示 */}
+        {/* 頻度タブ - 上部に固定表示・横スクロール対応 */}
         <section ref={tabsRef} className="sticky top-0 z-40 bg-[#f7f1e7] py-3 -mx-4 px-4">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
             {frequencyOrder.map((freq) => {
               const label = frequencyLabelMap[freq];
               if (!label) return null;
