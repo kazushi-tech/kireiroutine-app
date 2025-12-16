@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 
 import SchedulePage from './SchedulePage';
@@ -7,6 +7,7 @@ import SectionDetailPage from './SectionDetailPage';
 import CalendarPage from './CalendarPage';
 import BottomNav, { TabType } from './src/components/BottomNav';
 import GuidePage from './src/components/GuidePage';
+import ScrollToTop from './src/components/ScrollToTop';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -37,6 +38,14 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f7f1e7] text-slate-900">
+      {/* ナビゲーション（セクション詳細以外で表示） */}
+      {!isSectionDetail && (
+        <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+      )}
+      
+      {/* ページ遷移時にスクロール位置を先頭へ */}
+      <ScrollToTop />
+      
       <Routes>
         <Route path="/" element={<SchedulePage />} />
         <Route path="/list" element={<SchedulePage />} />
@@ -45,11 +54,6 @@ const App: React.FC = () => {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/section/:sectionId" element={<SectionDetailPage />} />
       </Routes>
-      
-      {/* 下部ナビ（セクション詳細以外で表示） */}
-      {!isSectionDetail && (
-        <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
-      )}
     </div>
   );
 };

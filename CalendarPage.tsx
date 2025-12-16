@@ -21,7 +21,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CLEANING_DATA, FREQUENCY_SUMMARY_META } from "./constants";
 import { Frequency } from "./types";
-import { Brush } from "lucide-react";
+import { Brush, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import {
   CalendarMap,
   clearDateTasks,
@@ -288,26 +288,41 @@ const CalendarPage: React.FC = () => {
   // View Mode for Left Column
   const [viewMode, setViewMode] = useState<"summary" | "agenda">("summary");
   
+  // モバイルでの左ペイン（タスクサマリー）折りたたみ状態
+  const [isTaskPanelOpen, setIsTaskPanelOpen] = useState(false);
+  
   // Bulk Assign Mode
   const [isBulkAssignMode, setIsBulkAssignMode] = useState(false);
   const [bulkFrequencyId, setBulkFrequencyId] = useState<Frequency | null>(null);
   const [bulkSelectedDates, setBulkSelectedDates] = useState<Set<string>>(new Set());
 
-  // モーダル表示中はbodyスクロールを防止し、タブバーを隠す
+  // モーダル表示中はbodyスクロールを防止し、タブバーを隠す（iOS Safari対策込み）
   useEffect(() => {
     if (isEditorOpen) {
-      document.body.style.overflow = 'hidden';
+      // iPhone Safari対策: 現在のスクロール位置を保存してbodyを固定
+      const scrollY = window.scrollY;
       document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
       document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      document.body.dataset.scrollY = String(scrollY);
       // タブバーを隠す
       const tabBar = document.querySelector('nav.fixed.bottom-0');
       if (tabBar) {
         (tabBar as HTMLElement).style.display = 'none';
       }
     } else {
-      document.body.style.overflow = '';
+      // スクロール位置を復元
+      const scrollY = Number(document.body.dataset.scrollY || 0);
       document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
       document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
       // タブバーを表示
       const tabBar = document.querySelector('nav.fixed.bottom-0');
       if (tabBar) {
@@ -315,9 +330,14 @@ const CalendarPage: React.FC = () => {
       }
     }
     return () => {
-      document.body.style.overflow = '';
+      const scrollY = Number(document.body.dataset.scrollY || 0);
       document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
       document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
       const tabBar = document.querySelector('nav.fixed.bottom-0');
       if (tabBar) {
         (tabBar as HTMLElement).style.display = '';
@@ -429,13 +449,31 @@ const CalendarPage: React.FC = () => {
       return;
     }
     
-    // Normal mode: open modal
+    // Always set selected date (for PC agenda panel)
     setSelectedDate(date);
+    setSelectedTaskIds(calendarMap[key] ?? []);
+    
+    // Mobile: open modal immediately
+    // PC: just update selection (agenda shown inline)
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    if (isMobile) {
+      setRepeatType("once");
+      setOnceFilter("all");
+      setIsEditorOpen(true);
+      setIsRescheduleMode(false);
+      setRescheduleTargetDate("");
+    }
+  };
+  
+  // PC用：編集モーダルを開く
+  const handleOpenEditor = () => {
+    if (!selectedDate) return;
+    const key = formatDateKey(selectedDate);
     setSelectedTaskIds(calendarMap[key] ?? []);
     setRepeatType("once");
     setOnceFilter("all");
     setIsEditorOpen(true);
-    setIsRescheduleMode(false); // Reset reschedule mode
+    setIsRescheduleMode(false);
     setRescheduleTargetDate("");
   };
 
@@ -774,36 +812,28 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-slate-900 py-6 px-4 sm:px-6 page-content">
-      <div className="mx-auto max-w-5xl rounded-[32px] bg-gradient-to-br from-emerald-50 to-sky-50 p-4 sm:p-6 lg:p-8 shadow-xl">
+    <main className="min-h-screen bg-[#f7f1e7] py-6 px-4 sm:px-6 page-content">
+      <div className="mx-auto max-w-3xl space-y-6">
         {/* ヘッダー */}
-        <header className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-              KireiRoutine
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500">
-              あなた専用の掃除ルーティン管理アプリ
-            </p>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-slate-500">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-            >
-              🏠 ホーム
-            </Link>
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white text-sm">
-              K
-            </span>
-          </div>
+        <header className="text-center py-4">
+          <h1 className="text-2xl font-bold text-slate-900">📅 掃除カレンダー</h1>
+          <p className="text-sm text-slate-600 mt-1">
+            掃除の予定を確認・登録できます
+          </p>
         </header>
 
-        {/* メインレイアウト - モバイルではカレンダーが先 */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        {/* メインレイアウト - モバイルでは1カラム、PCでは2カラム */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           {/* 掃除タスク (モバイルでは2番目、デスクトップでは1番目) */}
-          <section className="order-2 lg:order-1 rounded-3xl bg-white/80 p-4 sm:p-6 shadow-md flex flex-col h-full">
-            <div className="flex items-center justify-between mb-4">
+          <section className="order-2 lg:order-1 rounded-3xl bg-white p-4 sm:p-6 shadow-sm border border-orange-100 flex flex-col">
+            {/* ヘッダー（モバイルではクリックで開閉可能） - タップ領域48px以上確保 */}
+            <button
+              type="button"
+              onClick={() => setIsTaskPanelOpen(!isTaskPanelOpen)}
+              className="lg:pointer-events-none flex items-center justify-between w-full text-left min-h-12 py-3 -mx-2 px-2 rounded-xl lg:min-h-0 lg:py-0 lg:mx-0 lg:px-0 active:bg-slate-50 lg:active:bg-transparent touch-manipulation transition-colors"
+              aria-expanded={isTaskPanelOpen}
+              aria-controls="task-panel-content"
+            >
               <div>
                 <h2 className="text-base sm:text-lg font-semibold text-slate-900">
                   掃除タスク
@@ -812,29 +842,45 @@ const CalendarPage: React.FC = () => {
                   {viewMode === "summary" ? "頻度ごとの予定サマリー" : "今日〜1週間のアジェンダ"}
                 </p>
               </div>
-              <div className="flex bg-slate-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode("summary")}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                    viewMode === "summary"
-                      ? "bg-white text-slate-800 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  サマリー
-                </button>
-                <button
-                  onClick={() => setViewMode("agenda")}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                    viewMode === "agenda"
-                      ? "bg-white text-slate-800 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  アジェンダ
-                </button>
+              <div className="flex items-center gap-2">
+                {/* PC: タブ切替 */}
+                <div className="hidden lg:flex bg-slate-100 rounded-lg p-1">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setViewMode("summary"); }}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                      viewMode === "summary"
+                        ? "bg-white text-slate-800 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    サマリー
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setViewMode("agenda"); }}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                      viewMode === "agenda"
+                        ? "bg-white text-slate-800 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    アジェンダ
+                  </button>
+                </div>
+                {/* Mobile: 開閉アイコン - より大きく見やすく */}
+                <div className="lg:hidden flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-full text-xs font-medium">
+                  <span>{isTaskPanelOpen ? "閉じる" : "開く"}</span>
+                  {isTaskPanelOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
               </div>
-            </div>
+            </button>
+
+            {/* コンテンツ（モバイルでは条件付き表示、PCでは常に表示） */}
+            <div 
+              id="task-panel-content"
+              className={`${isTaskPanelOpen ? "block" : "hidden"} lg:block mt-4`}
+            >
 
             <div className="flex-1 overflow-y-auto pr-1 -mr-2 space-y-2">
               {viewMode === "summary" ? (
@@ -901,17 +947,18 @@ const CalendarPage: React.FC = () => {
             </div>
             
             <div className="mt-4 pt-4 border-t border-slate-100">
-               <div className="flex items-center justify-between text-xs text-slate-500">
-                 <span>合計: {weeklyTotalCount}件</span>
-                 <Link to="/" className="hover:text-emerald-600 hover:underline">
-                   ホームで確認 &rarr;
-                 </Link>
-               </div>
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span>合計: {weeklyTotalCount}件</span>
+                <Link to="/" className="hover:text-emerald-600 hover:underline">
+                  ホームで確認 &rarr;
+                </Link>
+              </div>
+            </div>
             </div>
           </section>
 
           {/* カレンダー (モバイルでは1番目、デスクトップでは2番目) */}
-          <section className="order-1 lg:order-2 rounded-3xl bg-white/80 p-4 sm:p-6 shadow-md flex flex-col">
+          <section className="order-1 lg:order-2 rounded-3xl bg-white p-4 sm:p-6 shadow-sm border border-orange-100 flex flex-col">
             {/* カレンダーヘッダー */}
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -988,7 +1035,9 @@ const CalendarPage: React.FC = () => {
                 const isToday = key === todayKey;
                 const taskIds = calendarMap[key] ?? [];
                 const hasTasks = taskIds.length > 0;
-                const isSelected = isBulkAssignMode && bulkSelectedDates.has(key);
+                const isBulkSelected = isBulkAssignMode && bulkSelectedDates.has(key);
+                // 通常モードでの選択状態（PC用）
+                const isNormalSelected = !isBulkAssignMode && selectedDate && key === formatDateKey(selectedDate);
                 
                 // タスクの頻度を取得（複数ある場合は最も高頻度のものを使用）
                 const tasksInDay = taskIds.map(id => TASK_MAP[id]).filter((t): t is CalendarTask => !!t);
@@ -1004,27 +1053,58 @@ const CalendarPage: React.FC = () => {
                 
                 const freqColors = dominantFreq ? FREQUENCY_COLORS[dominantFreq] : null;
 
+                // タップ領域は最低44px（h-11相当）を確保
+                // touch-manipulation: iOSでタップが確実に効くようにする
                 let baseClasses =
-                  "relative flex h-10 sm:h-11 lg:h-12 items-center justify-center rounded-2xl cursor-pointer text-xs sm:text-sm transition-colors";
+                  "relative flex h-11 sm:h-12 lg:h-14 items-center justify-center rounded-2xl cursor-pointer text-xs sm:text-sm transition-all active:scale-[0.97] touch-manipulation focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-1 outline-none";
                 let colorClasses = "";
                 let iconColorClass = "text-slate-400";
 
-                if (isSelected) {
-                  colorClasses = "bg-emerald-200 text-emerald-900 border-2 border-emerald-500";
-                  iconColorClass = "text-emerald-600";
+                if (isBulkSelected) {
+                  colorClasses = "bg-orange-200 text-orange-900 border-2 border-orange-500 ring-2 ring-orange-300";
+                  iconColorClass = "text-orange-600";
+                } else if (isNormalSelected && isToday && hasTasks && freqColors) {
+                  // 今日+タスクあり+選択中
+                  colorClasses = "bg-orange-500 text-white shadow-md ring-2 ring-orange-300 ring-offset-2";
+                  iconColorClass = "text-white";
+                } else if (isNormalSelected && hasTasks && freqColors) {
+                  // タスクあり+選択中
+                  colorClasses = `${freqColors.bg} ${freqColors.text} border ${freqColors.border} ring-2 ring-orange-300 ring-offset-2`;
+                  iconColorClass = freqColors.icon;
+                } else if (isNormalSelected) {
+                  // タスクなし+選択中
+                  colorClasses = "bg-orange-50 text-orange-700 border-2 border-orange-400 ring-2 ring-orange-200";
                 } else if (isToday && hasTasks && freqColors) {
-                  colorClasses = "bg-emerald-500 text-white";
+                  colorClasses = "bg-orange-500 text-white shadow-md";
                   iconColorClass = "text-white";
                 } else if (hasTasks && freqColors) {
                   colorClasses = `${freqColors.bg} ${freqColors.text} border ${freqColors.border}`;
                   iconColorClass = freqColors.icon;
                 } else if (isToday) {
                   colorClasses =
-                    "border border-emerald-400 text-emerald-700 bg-white";
+                    "border-2 border-orange-400 text-orange-700 bg-white";
                 } else {
                   colorClasses =
                     "bg-slate-50 text-slate-500 hover:bg-slate-100";
                 }
+
+                // 曜日の日本語表記
+                const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+                const dayOfWeek = dayNames[cell.date.getDay()];
+                
+                // aria-label を詳細に
+                const ariaLabelParts = [
+                  `${cell.date.getFullYear()}年${cell.date.getMonth() + 1}月${cell.date.getDate()}日（${dayOfWeek}）`,
+                ];
+                if (hasTasks) ariaLabelParts.push(`${taskIds.length}件の予定`);
+                if (isToday) ariaLabelParts.push("今日");
+                if (isNormalSelected) ariaLabelParts.push("選択中");
+                const ariaLabel = ariaLabelParts.join("、");
+                
+                // ドット表示用: タスクの頻度から色を取得（最大3つ）
+                const uniqueFrequencies = [...new Set(tasksInDay.map(t => t.frequency))];
+                const dotColors = uniqueFrequencies.slice(0, 3).map(f => FREQUENCY_COLORS[f]?.dot || 'bg-slate-400');
+                const hasMoreTasks = uniqueFrequencies.length > 3;
 
                 return (
                   <button
@@ -1032,12 +1112,27 @@ const CalendarPage: React.FC = () => {
                     type="button"
                     onClick={() => handleSelectDay(cell.date)}
                     className={`${baseClasses} ${colorClasses}`}
+                    aria-label={ariaLabel}
+                    aria-current={isToday ? "date" : undefined}
+                    aria-selected={isNormalSelected || undefined}
                   >
-                    {/* アイコン（予定ありの日のみ） */}
-                    {hasTasks && (
-                      <Brush className={`absolute -top-0.5 -right-0.5 h-3 w-3 sm:h-3.5 sm:w-3.5 ${iconColorClass}`} />
-                    )}
+                    {/* 日付数字 */}
                     <span>{cell.date.getDate()}</span>
+                    
+                    {/* ドット表示（タスクありの場合、セル下部に表示）- pointer-events-none でタップを邪魔しない */}
+                    {hasTasks && (
+                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5 pointer-events-none">
+                        {dotColors.map((dotColor, idx) => (
+                          <span
+                            key={idx}
+                            className={`h-1.5 w-1.5 rounded-full ${dotColor}`}
+                          />
+                        ))}
+                        {hasMoreTasks && (
+                          <span className="text-[8px] text-slate-400 font-medium">+</span>
+                        )}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -1046,24 +1141,19 @@ const CalendarPage: React.FC = () => {
             {/* 凡例 */}
             <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px] sm:text-xs text-slate-500">
               <div className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-orange-500" />
                 <span>今日</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className={`inline-block h-2.5 w-2.5 rounded-full ${FREQUENCY_COLORS[Frequency.Weekly].dot}`} />
-                <span>週1</span>
+                <span className="inline-block h-2.5 w-2.5 rounded-full ring-2 ring-orange-300 ring-offset-1 bg-white" />
+                <span>選択中</span>
               </div>
-              <div className="flex items-center gap-1">
-                <span className={`inline-block h-2.5 w-2.5 rounded-full ${FREQUENCY_COLORS[Frequency.BiWeekly].dot}`} />
-                <span>2週に1回</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className={`inline-block h-2.5 w-2.5 rounded-full ${FREQUENCY_COLORS[Frequency.Monthly].dot}`} />
-                <span>月1</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className={`inline-block h-2.5 w-2.5 rounded-full ${FREQUENCY_COLORS[Frequency.Quarterly].dot}`} />
-                <span>3ヶ月</span>
+              <div className="flex items-center gap-1 border-l border-slate-200 pl-2 ml-1">
+                <span className="flex gap-0.5">
+                  <span className={`inline-block h-1.5 w-1.5 rounded-full ${FREQUENCY_COLORS[Frequency.Weekly].dot}`} />
+                  <span className={`inline-block h-1.5 w-1.5 rounded-full ${FREQUENCY_COLORS[Frequency.Monthly].dot}`} />
+                </span>
+                <span>予定あり</span>
               </div>
             </div>
             
@@ -1109,24 +1199,122 @@ const CalendarPage: React.FC = () => {
               </div>
             )}
 
+            {/* 当日アジェンダ（PC/Mobile両方で表示） */}
+            {selectedDate && !isBulkAssignMode && (
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                {/* ヘッダー */}
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800">
+                      📋 {selectedDate.getMonth() + 1}/{selectedDate.getDate()}（{["日", "月", "火", "水", "木", "金", "土"][selectedDate.getDay()]}）の予定
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {selectedKey === todayKey ? "今日" : formatDisplayDate(selectedDate)}
+                    </p>
+                  </div>
+                  {/* PCのみ: 予定あり時は編集ボタン表示 */}
+                  {selectedTasksDetail.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleOpenEditor}
+                      className="hidden lg:inline-flex items-center gap-1 rounded-full bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 transition-colors"
+                      aria-label="予定を編集"
+                    >
+                      ✏️ 編集
+                    </button>
+                  )}
+                </div>
+                
+                {selectedTasksDetail.length === 0 ? (
+                  // Empty State - 予定なし
+                  <div className="rounded-2xl bg-slate-50 border border-dashed border-slate-200 p-4 text-center">
+                    <p className="text-sm text-slate-600 mb-1">
+                      この日は予定がありません
+                    </p>
+                    <p className="text-xs text-slate-400 mb-3">
+                      この日に掃除タスクを割り当てよう
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleOpenEditor}
+                      className="w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white hover:bg-orange-600 transition-colors shadow-sm active:scale-[0.98]"
+                      aria-label="予定を登録する"
+                    >
+                      ✏️ 予定を登録する
+                    </button>
+                    <Link
+                      to="/"
+                      className="inline-block mt-2 text-xs text-slate-400 hover:text-slate-600"
+                    >
+                      ホームで確認 →
+                    </Link>
+                  </div>
+                ) : (
+                  // Task List - 予定あり
+                  <div className="space-y-2">
+                    {selectedTasksDetail.map((task) => {
+                      const colors = FREQUENCY_COLORS[task.frequency];
+                      return (
+                        <div
+                          key={task.id}
+                          className={`flex items-center gap-3 rounded-xl border p-3 ${colors.bg} ${colors.border}`}
+                        >
+                          <div className={`flex-shrink-0 h-2 w-2 rounded-full ${colors.dot}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium ${colors.text} truncate`}>
+                              {task.label}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {FREQUENCY_SUMMARY_META[task.frequency]?.label}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    
+                    {/* フッター: 件数 + 編集ボタン */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-2">
+                      <p className="text-xs text-slate-400">
+                        合計 {selectedTasksDetail.length} 件
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleOpenEditor}
+                        className="rounded-lg bg-orange-100 px-4 py-2 text-xs font-medium text-orange-700 hover:bg-orange-200 transition-colors"
+                        aria-label="予定を編集"
+                      >
+                        ✏️ 編集（追加/削除）
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
           </section>
         </div>
       </div>
 
-      {/* フルスクリーンダイアログ：タスク編集 */}
+      {/* タスク編集モーダル - スマホではBottomSheet風 */}
       {isEditorOpen && selectedDate && (
         <div 
-          className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm"
           onClick={() => setIsEditorOpen(false)}
         >
+          {/* スマホ: BottomSheet（下から85vh）、PC: 中央モーダル */}
           <div 
-            className="fixed inset-0 z-[121] flex flex-col bg-white sm:inset-x-auto sm:inset-y-6 sm:left-1/2 sm:-translate-x-1/2 sm:max-w-2xl sm:w-full sm:rounded-3xl sm:shadow-2xl overflow-hidden"
+            className="fixed inset-x-0 bottom-0 top-auto z-[121] flex flex-col bg-white rounded-t-3xl max-h-[85vh] overflow-hidden animate-slide-up overscroll-contain touch-manipulation
+                       sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-2xl sm:w-[calc(100%-2rem)] sm:max-h-[90vh] sm:rounded-3xl sm:shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
+              {/* ドラッグハンドル（スマホのみ） */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="w-10 h-1 rounded-full bg-slate-300" />
+              </div>
+              
               {/* ヘッダー */}
               <div
                 className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3 sm:px-6"
-                style={{ paddingTop: "max(env(safe-area-inset-top), 12px)" }}
               >
                 <div>
                   <p className="text-[11px] sm:text-xs text-slate-400">
@@ -1139,7 +1327,7 @@ const CalendarPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditorOpen(false)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400"
                   aria-label="閉じる"
                 >
                   ✕
@@ -1347,6 +1535,17 @@ const CalendarPage: React.FC = () => {
                                       title="日付を指定して移動"
                                     >
                                       移動...
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleTask(task.id);
+                                      }}
+                                      className="text-[10px] bg-white border border-red-200 rounded px-1.5 py-0.5 text-red-400 hover:text-red-600 hover:border-red-400 hover:bg-red-50"
+                                      title="この予定を削除"
+                                      aria-label="削除"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
                                     </button>
                                   </div>
                                 )}

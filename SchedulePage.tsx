@@ -87,7 +87,7 @@ const frequencyDisplayData: Record<Frequency, { title: string; description: stri
 const SchedulePage: React.FC = () => {
   const location = useLocation();
   const state = location.state as { initialFrequency?: Frequency; activeFrequency?: Frequency } | null;
-  const tabsRef = useRef<HTMLElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   const handleStartClick = () => {
     setActiveFrequency(Frequency.Weekly);
@@ -298,9 +298,89 @@ const SchedulePage: React.FC = () => {
           onStartSimpleMode={() => setIsSimpleMode(true)}
         />
 
-        {/* 頻度タブ - 上部に固定表示・横スクロール対応 */}
-        <section ref={tabsRef} className="sticky top-0 z-40 bg-[#f7f1e7] py-3 -mx-4 px-4">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+        {/* 使い方セクション：KireiRoutineの流れ */}
+        <CollapsibleSection
+          title="📖 KireiRoutine の流れ"
+          subtitle="使い方ガイド"
+          storageKey="kireiRoutine-flow-section-open"
+          defaultOpen={true}
+        >
+          <article className="flex flex-col lg:flex-row items-center gap-6 lg:gap-10">
+            {/* 左側：テキスト説明 */}
+            <div className="w-full lg:w-2/5 text-center lg:text-left space-y-3">
+              <h3 className="text-lg font-bold text-slate-900">
+                がんばりすぎない掃除ルーティン
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                週1のエリアを決めて、15〜20分だけ掃除して、次回日をカレンダーに入れて回していく「がんばりすぎない掃除ルーティン」です。
+              </p>
+              <ul className="text-sm text-slate-600 space-y-1 text-left">
+                <li>1️⃣ エリアを選ぶ（週1回）</li>
+                <li>2️⃣ 掃除する（15〜20分）</li>
+                <li>3️⃣ 次回日を入れる</li>
+                <li>4️⃣ サイクルを回す</li>
+              </ul>
+            </div>
+            {/* 右側：画像 */}
+            <div className="w-full lg:w-3/5 flex flex-col items-center">
+              <img
+                src="/branding-kirei-flow-steps.jpeg"
+                alt="KireiRoutine Flow Steps"
+                className="w-full max-w-[520px] mx-auto rounded-3xl shadow-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setZoomedImage({ src: '/branding-kirei-flow-steps.jpeg', alt: 'KireiRoutine Flow Steps' })}
+              />
+              <p className="text-xs text-slate-500 mt-2">※ タップで拡大</p>
+            </div>
+          </article>
+        </CollapsibleSection>
+
+        {/* 使い方セクション：掃除のタイプ */}
+        <CollapsibleSection
+          title="🧹 掃除のタイプ"
+          subtitle="頻度別の掃除タイプの説明"
+          storageKey="kireiRoutine-frequency-section-open"
+          defaultOpen={true}
+        >
+          <article className="flex flex-col lg:flex-row items-center gap-6 lg:gap-10">
+            {/* 左側：テキスト説明 */}
+            <div className="w-full lg:w-2/5 text-center lg:text-left space-y-3">
+              <h3 className="text-lg font-bold text-slate-900">
+                頻度で分けた掃除タイプ
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                掃除は頻度で4つのタイプに分かれます。週1のメイン掃除から年1の大掃除まで、無理なく回せるルーティンです。
+              </p>
+              <ul className="text-sm text-slate-600 space-y-1 text-left">
+                <li>🟢 <strong>週1</strong>: メイン掃除（ベッド・キッチン・トイレ）</li>
+                <li>🔵 <strong>2週間に1回</strong>: ちょい重め掃除</li>
+                <li>🟡 <strong>月1</strong>: リセット＆ニオイ対策</li>
+                <li>🔴 <strong>3ヶ月〜年1</strong>: 大掃除クラス</li>
+              </ul>
+            </div>
+            {/* 右側：画像 */}
+            <div className="w-full lg:w-3/5 flex flex-col items-center">
+              <img
+                src="/images/branding-kirei-frequency-weekly.jpeg"
+                alt="掃除のタイプのインフォグラフィック"
+                className="w-full max-w-[520px] mx-auto rounded-3xl shadow-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setZoomedImage({ src: '/images/branding-kirei-frequency-weekly.jpeg', alt: '掃除のタイプのインフォグラフィック' })}
+              />
+              <p className="text-xs text-slate-500 mt-2">※ タップで拡大</p>
+            </div>
+          </article>
+        </CollapsibleSection>
+
+
+        {/* 頻度タブ - セクション見出し付きで強調 */}
+        <section className="bg-gradient-to-r from-orange-100 to-amber-50 rounded-2xl p-4 shadow-sm border border-orange-200">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xl">📋</span>
+            <h2 className="text-lg font-bold text-slate-900">掃除頻度を選ぶ</h2>
+          </div>
+          <p className="text-sm text-slate-600 mb-4">
+            タブをタップして、やりたい頻度の掃除を選んでください
+          </p>
+          <div ref={tabsRef} className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
             {frequencyOrder.map((freq) => {
               const label = frequencyLabelMap[freq];
               if (!label) return null;
@@ -310,10 +390,10 @@ const SchedulePage: React.FC = () => {
                   key={freq}
                   type="button"
                   onClick={() => setActiveFrequency(freq)}
-                  className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+                  className={`flex-shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition-all ${
                     isActive
-                      ? 'bg-orange-500 text-white shadow-sm'
-                      : 'bg-white text-slate-700 hover:bg-orange-50 border border-slate-200'
+                      ? 'bg-orange-500 text-white shadow-lg scale-105'
+                      : 'bg-white text-slate-700 hover:bg-orange-50 border-2 border-slate-200 hover:border-orange-300'
                   }`}
                 >
                   {label}
@@ -474,12 +554,12 @@ const SchedulePage: React.FC = () => {
           </section>
         )}
 
-        {/* フィルター・設定ボタン */}
-        <section className="flex flex-wrap items-center justify-center gap-3">
+        {/* フィルター・設定ボタン（スマホで縦積み、PCで横並び） */}
+        <section className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
           <button
             type="button"
             onClick={() => setIsBulkScheduleOpen(true)}
-            className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 min-h-[48px]"
           >
             <Calendar className="h-4 w-4" />
             掃除日をまとめて設定
@@ -487,10 +567,10 @@ const SchedulePage: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowTodayOnly(!showTodayOnly)}
-            className={`rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
+            className={`w-full sm:w-auto rounded-full px-6 py-3 text-sm font-medium transition-colors min-h-[48px] ${
               showTodayOnly
                 ? 'bg-orange-500 text-white shadow-md'
-                : 'bg-white text-slate-700 shadow-sm hover:bg-orange-50'
+                : 'bg-white text-slate-700 shadow-sm hover:bg-orange-50 border border-slate-300'
             }`}
           >
             {showTodayOnly ? '今日のみ表示中' : '今日やる分だけ絞り込む'}

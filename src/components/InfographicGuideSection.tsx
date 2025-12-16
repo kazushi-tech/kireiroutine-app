@@ -75,17 +75,30 @@ const InfographicGuideSection: React.FC<InfographicGuideSectionProps> = ({
 
             {/* 右側：画像 */}
             <div className="w-full lg:w-3/5 flex flex-col items-center">
-              <img
-                src={item.imageSrc}
-                alt={item.imageAlt}
-                loading="lazy"
-                className={`w-full max-w-[520px] mx-auto rounded-3xl shadow-md object-contain ${
-                  onImageClick
-                    ? 'cursor-pointer hover:opacity-90 transition-opacity'
-                    : ''
-                }`}
-                onClick={() => onImageClick?.(item.imageSrc, item.imageAlt)}
-              />
+              {onImageClick ? (
+                <button
+                  type="button"
+                  onClick={() => onImageClick(item.imageSrc, item.imageAlt)}
+                  className="w-full max-w-[520px] mx-auto rounded-3xl focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 transition-all active:scale-[0.98]"
+                  aria-label={`${item.imageAlt}を拡大表示`}
+                >
+                  <img
+                    src={item.imageSrc}
+                    alt={item.imageAlt}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full rounded-3xl shadow-md object-contain hover:opacity-90 transition-opacity"
+                  />
+                </button>
+              ) : (
+                <img
+                  src={item.imageSrc}
+                  alt={item.imageAlt}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full max-w-[520px] mx-auto rounded-3xl shadow-md object-contain"
+                />
+              )}
               {onImageClick && (
                 <p className="text-xs text-slate-500 mt-2">※ タップで拡大</p>
               )}
