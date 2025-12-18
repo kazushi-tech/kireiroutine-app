@@ -9,6 +9,7 @@ import {
   saveSectionMetaMap, 
   formatDateForDisplay
 } from './sectionMetaStorage';
+import InfographicCard from './src/components/InfographicCard';
 
 const SectionDetailPage: React.FC = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
@@ -164,6 +165,40 @@ const SectionDetailPage: React.FC = () => {
             </p>
           </div>
         </section>
+
+        {/* 最短攻略図 */}
+        {(relatedSection?.infographics?.weekly || relatedSection?.infographics?.biweekly || relatedSection?.infographics?.monthly || relatedSection?.infographics?.quarterly || relatedSection?.infographics?.semiannual || relatedSection?.infographics?.annual) && (
+          <div id="infographic">
+            <InfographicCard
+              src={
+                relatedSection.infographics.weekly?.src ||
+                relatedSection.infographics.biweekly?.src ||
+                relatedSection.infographics.monthly?.src ||
+                relatedSection.infographics.quarterly?.src ||
+                relatedSection.infographics.semiannual?.src ||
+                relatedSection.infographics.annual?.src ||
+                ''
+              }
+              alt={
+                relatedSection.infographics.weekly?.alt ||
+                relatedSection.infographics.biweekly?.alt ||
+                relatedSection.infographics.monthly?.alt ||
+                relatedSection.infographics.quarterly?.alt ||
+                relatedSection.infographics.semiannual?.alt ||
+                relatedSection.infographics.annual?.alt ||
+                ''
+              }
+              label={
+                relatedSection.infographics.weekly?.label ||
+                relatedSection.infographics.biweekly?.label ||
+                relatedSection.infographics.monthly?.label ||
+                relatedSection.infographics.quarterly?.label ||
+                relatedSection.infographics.semiannual?.label ||
+                relatedSection.infographics.annual?.label
+              }
+            />
+          </div>
+        )}
 
         {/* 準備するもの＋メモ */}
         <section className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)]">

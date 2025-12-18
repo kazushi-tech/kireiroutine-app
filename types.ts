@@ -19,6 +19,15 @@ export interface CleaningTask {
 }
 
 /**
+ * インフォグラフィック画像の定義
+ */
+export interface InfographicAsset {
+  src: string;      // "/infographics/weekly/weekly-bedroom.jpg"
+  alt: string;      // "週1の最短攻略図：寝室・ベッド周り"
+  label?: string;   // "週1：最短攻略図"
+}
+
+/**
  * 掃除のエリア（セクション）
  * 例: キッチン、寝室など
  */
@@ -32,6 +41,14 @@ export interface CleaningSection {
   parallelTip?: string; // このセクション作業中に並行でできること
   waitTime?: number; // このセクションで発生する待ち時間（分）
   waitAction?: string; // 待ち時間中に何をするか（例：「つけ置き中に→」）
+  infographics?: {
+    weekly?: InfographicAsset;
+    biweekly?: InfographicAsset;
+    monthly?: InfographicAsset;
+    quarterly?: InfographicAsset;
+    semiannual?: InfographicAsset;
+    annual?: InfographicAsset;
+  };
 }
 
 /**

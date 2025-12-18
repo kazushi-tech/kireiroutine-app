@@ -45,7 +45,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "w-bed-2", text: "ベッドまわりの床（ベッド下の手が届く範囲）を掃除機 → モップで拭き掃除" },
           { id: "w-bed-3", text: "ベッドサイドテーブル、ヘッドボード上のホコリをサッと拭き取る" },
         ],
-        tools: ["洗濯洗剤", "洗濯ネット", "掃除機", "フロアモップ", "マイクロファイバークロス"]
+        tools: ["洗濯洗剤", "洗濯ネット", "掃除機", "フロアモップ", "マイクロファイバークロス"],
+        infographics: {
+          weekly: {
+            src: "/infographics/weekly/weekly-bedroom.jpg",
+            alt: "週1の最短攻略図：寝室・ベッド周り",
+            label: "最短攻略図（週1）"
+          }
+        }
       },
       {
         id: "weekly-kitchen",
@@ -62,7 +69,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "w-kit-4", text: "電子レンジ・トースター・電気ケトルの外側・取っ手・スイッチ部を拭き掃除" },
           { id: "w-kit-5", text: "キッチン床を掃除機 → モップ" },
         ],
-        tools: ["食器用中性洗剤", "酸素系漂白剤", "スポンジ", "マイクロファイバークロス", "アルコールスプレー", "ゴム手袋", "フロアモップ"]
+        tools: ["食器用中性洗剤", "酸素系漂白剤", "スポンジ", "マイクロファイバークロス", "アルコールスプレー", "ゴム手袋", "フロアモップ"],
+        infographics: {
+          weekly: {
+            src: "/infographics/weekly/weekly-kitchen.jpg",
+            alt: "週1の最短攻略図：キッチン",
+            label: "最短攻略図（週1）"
+          }
+        }
       },
       {
         id: "weekly-bath",
@@ -77,7 +91,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "w-bath-2", text: "浴室排水口を簡易分解洗浄し、ぬめりを落とす" },
           { id: "w-bath-3", text: "浴室、洗面台の鏡・蛇口の水垢をクエン酸スプレーでラップで湿布" },
         ],
-        tools: ["風呂用中性洗剤", "スポンジ", "浴室用ブラシ", "クエン酸スプレー", "マイクロファイバークロス", "ゴム手袋"]
+        tools: ["風呂用中性洗剤", "スポンジ", "浴室用ブラシ", "クエン酸スプレー", "マイクロファイバークロス", "ゴム手袋"],
+        infographics: {
+          weekly: {
+            src: "/infographics/weekly/weekly-bath.jpg",
+            alt: "週1の最短攻略図：浴室・洗面所",
+            label: "最短攻略図（週1）"
+          }
+        }
       },
       {
         id: "weekly-toilet",
@@ -93,7 +114,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "w-toilet-3", text: "トイレットペーパー・消臭スプレーなどの残量チェック" },
           { id: "w-toilet-4", text: "トイレマット・スリッパがあれば軽くはたいてホコリを落とす" },
         ],
-        tools: ["トイレ用洗剤", "トイレブラシ", "使い捨てトイレクリーナーシート", "ゴム手袋"]
+        tools: ["トイレ用洗剤", "トイレブラシ", "使い捨てトイレクリーナーシート", "ゴム手袋"],
+        infographics: {
+          weekly: {
+            src: "/infographics/weekly/weekly-toilet.jpg",
+            alt: "週1の最短攻略図：トイレ",
+            label: "最短攻略図（週1）"
+          }
+        }
       },
       {
         id: "weekly-living",
@@ -107,7 +135,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "w-living-3", text: "テレビ台・棚・PCデスク・モニター周りのホコリ取り" },
           { id: "w-living-4", text: "リモコン・キーボード・マウス・スマホ周りをアルコールシートで拭き取り" },
         ],
-        tools: ["掃除機", "フロアモップ", "ハンディモップ", "マイクロファイバークロス", "アルコール除菌シート"]
+        tools: ["掃除機", "フロアモップ", "ハンディモップ", "マイクロファイバークロス", "アルコール除菌シート"],
+        infographics: {
+          weekly: {
+            src: "/infographics/weekly/weekly-living.jpg",
+            alt: "週1の最短攻略図：リビング",
+            label: "最短攻略図（週1）"
+          }
+        }
       },
       {
         id: "weekly-entrance",
@@ -118,7 +153,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "w-ent-1", text: "玄関たたきをホウキで掃き、必要に応じて水拭き" },
           { id: "w-ent-2", text: "廊下の床を掃除機 → モップ" },
         ],
-        tools: ["ほうき・ちりとり", "フロアモップ", "マイクロファイバークロス"]
+        tools: ["ほうき・ちりとり", "フロアモップ", "マイクロファイバークロス"],
+        infographics: {
+          weekly: {
+            src: "/infographics/weekly/weekly-entrance.jpg",
+            alt: "週1の最短攻略図：玄関",
+            label: "最短攻略図（週1）"
+          }
+        }
       },
       {
         id: "weekly-other",
@@ -129,7 +171,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "w-other-1", text: "室内のドアノブ／電気スイッチプレートをアルコールシートで拭き取り" },
           { id: "w-other-2", text: "よく触るリモコン・スマホケースをアルコールシートで拭き取り" },
         ],
-        tools: ["アルコール除菌シート", "マイクロファイバークロス"]
+        tools: ["アルコール除菌シート", "マイクロファイバークロス"],
+        infographics: {
+          weekly: {
+            src: "/infographics/weekly/weekly-other.jpg",
+            alt: "週1の最短攻略図：その他・共通",
+            label: "最短攻略図（週1）"
+          }
+        }
       }
     ]
   },
@@ -151,7 +200,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "bi-kit-2", text: "電子レンジ庫内のこびりつきを、重曹水をチンして蒸気でふやかしてから拭き取り" },
           { id: "bi-kit-3", text: "冷蔵庫内の「明らかに不要・賞味期限切れ」の食材を処分" },
         ],
-        tools: ["食器用中性洗剤", "重曹", "スポンジ", "マイクロファイバークロス", "ゴム手袋"]
+        tools: ["食器用中性洗剤", "重曹", "スポンジ", "マイクロファイバークロス", "ゴム手袋"],
+        infographics: {
+          biweekly: {
+            src: "/infographics/biweekly/bi-kitchen.jpg",
+            alt: "2週に1回の最短攻略図：キッチン",
+            label: "最短攻略図（2週に1回）"
+          }
+        }
       },
       {
         id: "bi-bath",
@@ -163,7 +219,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "bi-bath-1", text: "浴室の壁・床全体をブラシでこすり、カビ予備軍を減らす" },
           { id: "bi-bath-2", text: "洗面台下収納の中身をざっと見直し、不要な箱やゴミを捨てる" },
         ],
-        tools: ["風呂用洗剤", "ブラシ", "スポンジ", "マイクロファイバークロス"]
+        tools: ["風呂用洗剤", "ブラシ", "スポンジ", "マイクロファイバークロス"],
+        infographics: {
+          biweekly: {
+            src: "/infographics/biweekly/bi-bath.jpg",
+            alt: "2週に1回の最短攻略図：浴室・洗面所",
+            label: "最短攻略図（2週に1回）"
+          }
+        }
       },
       {
         id: "bi-toilet",
@@ -176,7 +239,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         tasks: [
           { id: "bi-toilet-1", text: "便器横〜壁の下部を中性洗剤をつけたクロスで拭き掃除（跳ね汚れ対策）" },
         ],
-        tools: ["マイクロファイバークロス", "中性洗剤"]
+        tools: ["マイクロファイバークロス", "中性洗剤"],
+        infographics: {
+          biweekly: {
+            src: "/infographics/biweekly/bi-toilet.jpg",
+            alt: "2週に1回の最短攻略図：トイレ",
+            label: "最短攻略図（2週に1回）"
+          }
+        }
       },
       {
         id: "bi-entrance",
@@ -188,7 +258,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "bi-ent-1", text: "靴箱の扱を開けて換気し、手前側の棚板をさっと拭く" },
           { id: "bi-ent-2", text: "よく履く靴の表面の汚れを、濡れ雑巾かシューケアシートで拭き取る" },
         ],
-        tools: ["マイクロファイバークロス", "シューケアシート"]
+        tools: ["マイクロファイバークロス", "シューケアシート"],
+        infographics: {
+          biweekly: {
+            src: "/infographics/biweekly/bi-entrance.jpg",
+            alt: "2週に1回の最短攻略図：玄関・廊下",
+            label: "最短攻略図（2週に1回）"
+          }
+        }
       },
       {
         id: "bi-other",
@@ -200,7 +277,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "bi-other-1", text: "掃除機のダストボックス・紙パック・フィルターを掃除" },
           { id: "bi-other-2", text: "ゴミ箱の内側をアルコールシートで拭き、ニオイ対策" },
         ],
-        tools: ["アルコール除菌シート", "ブラシ"]
+        tools: ["アルコール除菌シート", "ブラシ"],
+        infographics: {
+          biweekly: {
+            src: "/infographics/biweekly/bi-other.jpg",
+            alt: "2週に1回の最短攻略図：その他・共通",
+            label: "最短攻略図（2週に1回）"
+          }
+        }
       }
     ]
   },
@@ -221,7 +305,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "mo-bed-1", text: "ベッドパッドや毛布など「シーツ以外」の寝具を洗濯" },
           { id: "mo-bed-2", text: "マットレスを壁に立てかけるなどして、風を通す" },
         ],
-        tools: ["洗濯洗剤", "大きめ洗濯ネット", "布団ばさみ"]
+        tools: ["洗濯洗剤", "大きめ洗濯ネット", "布団ばさみ"],
+        infographics: {
+          monthly: {
+            src: "/infographics/monthly/mo-bedroom.jpg",
+            alt: "月1の最短攻略図：寝室・ベッド周り",
+            label: "最短攻略図（月1）"
+          }
+        }
       },
       {
         id: "mo-kitchen",
@@ -238,7 +329,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "mo-kit-4", text: "レンジフード外側やコンロ周りの壁・タイルの油汚れを拭き掃除" },
           { id: "mo-kit-5", text: "電気ケトル内をクエン酸で湯沸かしし、カルキを落たす" },
         ],
-        tools: ["食器用中性洗剤", "クエン酸", "マイクロファイバークロス", "キッチン用アルコール", "ゴム手袋"]
+        tools: ["食器用中性洗剤", "クエン酸", "マイクロファイバークロス", "キッチン用アルコール", "ゴム手袋"],
+        infographics: {
+          monthly: {
+            src: "/infographics/monthly/mo-kitchen.jpg",
+            alt: "月1の最短攻略図：キッチン",
+            label: "最短攻略図（月1）"
+          }
+        }
       },
       {
         id: "mo-bath",
@@ -253,7 +351,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "mo-bath-2", text: "洗濯機のゴムパッキン周り・フタの内側を拭き掃除" },
           { id: "mo-bath-3", text: "洗面台の排水口を、重曹＋クエン酸でしっかり掃除" },
         ],
-        tools: ["洗濯槽クリーナー", "重曹", "クエン酸", "スポンジ", "マイクロファイバークロス"]
+        tools: ["洗濯槽クリーナー", "重曹", "クエン酸", "スポンジ", "マイクロファイバークロス"],
+        infographics: {
+          monthly: {
+            src: "/infographics/monthly/mo-bath.jpg",
+            alt: "月1の最短攻略図：浴室・洗面所",
+            label: "最短攻略図（月1）"
+          }
+        }
       },
       {
         id: "mo-toilet",
@@ -264,7 +369,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         tasks: [
           { id: "mo-toilet-1", text: "トイレタンク上の手洗い部分・フタ周辺を中性洗剤でしっかり拭き掃除" },
         ],
-        tools: ["中性洗剤", "マイクロファイバークロス", "ハンディモップ"]
+        tools: ["中性洗剤", "マイクロファイバークロス", "ハンディモップ"],
+        infographics: {
+          monthly: {
+            src: "/infographics/monthly/mo-toilet.jpg",
+            alt: "月1の最短攻略図：トイレ",
+            label: "最短攻略図（月1）"
+          }
+        }
       },
       {
         id: "mo-entrance",
@@ -278,7 +390,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "mo-ent-1", text: "ゴミ箱を丸洗いして、しっかり乾燥させる" },
           { id: "mo-ent-2", text: "玄関ドアの内側を中性洗剤で拭き、手あかを落とす" },
         ],
-        tools: ["中性洗剤", "スポンジ", "ブラシ", "ゴミ袋", "マイクロファイバークロス"]
+        tools: ["中性洗剤", "スポンジ", "ブラシ", "ゴミ袋", "マイクロファイバークロス"],
+        infographics: {
+          monthly: {
+            src: "/infographics/monthly/mo-entrance.jpg",
+            alt: "月1の最短攻略図：玄関・廊下",
+            label: "最短攻略図（月1）"
+          }
+        }
       }
     ]
   },
@@ -299,7 +418,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "qu-bed-1", text: "マットレスの向きを90〜180度変える" },
           { id: "qu-bed-2", text: "掛け布団・枕を天日干しして、湿気とニオイをリセット" },
         ],
-        tools: ["布団ばさみ", "物干しざお", "布団たたき"]
+        tools: ["布団ばさみ", "物干しざお", "布団たたき"],
+        infographics: {
+          quarterly: {
+            src: "/infographics/quarterly/qu-bedroom.jpg",
+            alt: "3ヶ月に1回の最短攻略図：寝室・ベッド周り",
+            label: "最短攻略図（3ヶ月に1回）"
+          }
+        }
       },
       {
         id: "qu-kitchen",
@@ -314,7 +440,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "qu-kit-2", text: "冷蔵庫の上・側面・背面のホコリを掃除機＋クロスで拭き取る" },
           { id: "qu-kit-3", text: "キッチン収納の中身を一度ざっと出し、底面を拭き掃除 → 不要なものを処分" },
         ],
-        tools: ["食器用中性洗剤", "重曹", "スポンジ", "掃除機", "マイクロファイバークロス", "ゴム手袋"]
+        tools: ["食器用中性洗剤", "重曹", "スポンジ", "掃除機", "マイクロファイバークロス", "ゴム手袋"],
+        infographics: {
+          quarterly: {
+            src: "/infographics/quarterly/qu-kitchen.jpg",
+            alt: "3ヶ月に1回の最短攻略図：キッチン",
+            label: "最短攻略図（3ヶ月に1回）"
+          }
+        }
       },
       {
         id: "qu-bath",
@@ -329,7 +462,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "qu-bath-2", text: "浴室ドアのレール・パッキン部分の黒ずみをブラシでこする" },
           { id: "qu-bath-3", text: "洗濯機の糸くずフィルター・排水フィルターを念入りに掃除" },
         ],
-        tools: ["カビ取り剤", "ゴム手袋", "マスク", "ブラシ", "マイクロファイバークロス"]
+        tools: ["カビ取り剤", "ゴム手袋", "マスク", "ブラシ", "マイクロファイバークロス"],
+        infographics: {
+          quarterly: {
+            src: "/infographics/quarterly/qu-bath.jpg",
+            alt: "3ヶ月に1回の最短攻略図：浴室・洗面所",
+            label: "最短攻略図（3ヶ月に1回）"
+          }
+        }
       },
       {
         id: "qu-living",
@@ -341,7 +481,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "qu-liv-1", text: "カーテン全体をはたき・ハンディモップでホコリ払い" },
           { id: "qu-liv-2", text: "照明器具（シーリングライトなど）の表面のホコリをハンディモップで取る" },
         ],
-        tools: ["ハンディモップ", "マイクロファイバークロス", "脚立"]
+        tools: ["ハンディモップ", "マイクロファイバークロス", "脚立"],
+        infographics: {
+          quarterly: {
+            src: "/infographics/quarterly/qu-living.jpg",
+            alt: "3ヶ月に1回の最短攻略図：リビング",
+            label: "最短攻略図（3ヶ月に1回）"
+          }
+        }
       },
       {
         id: "qu-balcony",
@@ -353,7 +500,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "qu-bal-1", text: "ベランダの床をほうきで掃き、泥や砂を掃除" },
           { id: "qu-bal-2", text: "玄関〜ベランダにかけて、サッシレールのホコリ・ゴミをブラシ＋掃除機で吸い取る" },
         ],
-        tools: ["ほうき・ちりとり", "ブラシ", "掃除機", "マイクロファイバークロス"]
+        tools: ["ほうき・ちりとり", "ブラシ", "掃除機", "マイクロファイバークロス"],
+        infographics: {
+          quarterly: {
+            src: "/infographics/quarterly/qu-balcony.jpg",
+            alt: "3ヶ月に1回の最短攻略図：玄関・ベランダ",
+            label: "最短攻略図（3ヶ月に1回）"
+          }
+        }
       },
       {
         id: "qu-other",
@@ -368,7 +522,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "qu-oth-2", text: "窓ガラスの内側をガラスクリーナーで拭き掃除" },
           { id: "qu-oth-3", text: "網戸の表・裏を、軽く水拭き or 網戸用スポンジで掃除" },
         ],
-        tools: ["掃除機", "エアコン用ブラシ", "ガラスクリーナー", "マイクロファイバークロス"]
+        tools: ["掃除機", "エアコン用ブラシ", "ガラスクリーナー", "マイクロファイバークロス"],
+        infographics: {
+          quarterly: {
+            src: "/infographics/quarterly/qu-other.jpg",
+            alt: "3ヶ月に1回の最短攻略図：その他",
+            label: "最短攻略図（3ヶ月に1回）"
+          }
+        }
       }
     ]
   },
@@ -387,7 +548,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "sa-bed-1", text: "クローゼット内の衣類を見直し、「着ていない服」を仕分け" },
           { id: "sa-bed-2", text: "オフシーズンの寝具（毛布・厚手布団など）をクリーニング or 丸洗い" },
         ],
-        tools: ["収納用圧縮袋", "ゴミ袋", "クリーニング用バッグ"]
+        tools: ["収納用圧縮袋", "ゴミ袋", "クリーニング用バッグ"],
+        infographics: {
+          semiannual: {
+            src: "/infographics/semiannual/sa-bedroom.jpg",
+            alt: "半年に1回の最短攻略図：寝室",
+            label: "最短攻略図（半年に1回）"
+          }
+        }
       },
       {
         id: "sa-kitchen",
@@ -399,7 +567,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "sa-kit-1", text: "使用頻度の低い調理器具・食器を見直し、不要なものは処分" },
           { id: "sa-kit-2", text: "調味料棚全体を拭き掃除し、賞味期限切れの調味料を整理" },
         ],
-        tools: ["マイクロファイバークロス", "中性洗剤", "ゴミ袋"]
+        tools: ["マイクロファイバークロス", "中性洗剤", "ゴミ袋"],
+        infographics: {
+          semiannual: {
+            src: "/infographics/semiannual/sa-kitchen.jpg",
+            alt: "半年に1回の最短攻略図：キッチン",
+            label: "最短攻略図（半年に1回）"
+          }
+        }
       },
       {
         id: "sa-bath",
@@ -413,7 +588,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "sa-bath-1", text: "シャワーヘッド・ホース・カランなどをクエン酸につけ置きして、頑固な水垢を除去" },
           { id: "sa-bath-2", text: "洗濯機の防水パン・排水トラップを外せるところまで外し、汚れを掃除" },
         ],
-        tools: ["クエン酸", "洗面器やバケツ", "ブラシ", "マイクロファイバークロス", "ゴム手袋"]
+        tools: ["クエン酸", "洗面器やバケツ", "ブラシ", "マイクロファイバークロス", "ゴム手袋"],
+        infographics: {
+          semiannual: {
+            src: "/infographics/semiannual/sa-bath.jpg",
+            alt: "半年に1回の最短攻略図：浴室・洗面所",
+            label: "最短攻略図（半年に1回）"
+          }
+        }
       },
       {
         id: "sa-toilet",
@@ -425,7 +607,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "sa-toilet-1", text: "トイレの床全面・壁の下部を中性洗剤＋水拭き → から拭きでリセット" },
           { id: "sa-toilet-2", text: "タンク内に使用可能な洗浄剤があれば、取扱説明書に従って使用" },
         ],
-        tools: ["中性洗剤", "マイクロファイバークロス", "バケツ", "ゴム手袋"]
+        tools: ["中性洗剤", "マイクロファイバークロス", "バケツ", "ゴム手袋"],
+        infographics: {
+          semiannual: {
+            src: "/infographics/semiannual/sa-toilet.jpg",
+            alt: "半年に1回の最短攻略図：トイレ",
+            label: "最短攻略図（半年に1回）"
+          }
+        }
       },
       {
         id: "sa-living",
@@ -437,7 +626,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "sa-liv-1", text: "収納棚・引き出しを一度中身を出して、底面・側面を拭き掃除" },
           { id: "sa-liv-2", text: "「もう使わないもの」を仕分けして処分 or 売却候補に" },
         ],
-        tools: ["掃除機", "マイクロファイバークロス", "ゴミ袋", "ダンボール"]
+        tools: ["掃除機", "マイクロファイバークロス", "ゴミ袋", "ダンボール"],
+        infographics: {
+          semiannual: {
+            src: "/infographics/semiannual/sa-living.jpg",
+            alt: "半年に1回の最短攻略図：リビング",
+            label: "最短攻略図（半年に1回）"
+          }
+        }
       },
       {
         id: "sa-entrance",
@@ -449,7 +645,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "sa-ent-1", text: "靴箱の中身を全出しして、棚板を中性洗剤で拭き掃除" },
           { id: "sa-ent-2", text: "ベランダ床・排水口をブラシでこすり洗い" },
         ],
-        tools: ["中性洗剤", "ブラシ", "バケツ", "マイクロファイバークロス", "ゴミ袋"]
+        tools: ["中性洗剤", "ブラシ", "バケツ", "マイクロファイバークロス", "ゴミ袋"],
+        infographics: {
+          semiannual: {
+            src: "/infographics/semiannual/sa-entrance.jpg",
+            alt: "半年に1回の最短攻略図：玄関・ベランダ",
+            label: "最短攻略図（半年に1回）"
+          }
+        }
       },
       {
         id: "sa-other",
@@ -499,7 +702,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "an-kit-2", text: "冷蔵庫をほぼ空にして、棚・引き出しを丸洗いし、背面まで移動して床の汚れを掃除" },
           { id: "an-kit-3", text: "オーブンレンジ・トースターの庫内を重曹・クエン酸で徹底清掃" },
         ],
-        tools: ["重曹", "クエン酸", "食器用中性洗剤", "スポンジ", "ブラシ", "ゴム手袋"]
+        tools: ["重曹", "クエン酸", "食器用中性洗剤", "スポンジ", "ブラシ", "ゴム手袋"],
+        infographics: {
+          annual: {
+            src: "/infographics/annual/an-kitchen.jpg",
+            alt: "年1の最短攻略図：キッチン",
+            label: "最短攻略図（年1）"
+          }
+        }
       },
       {
         id: "an-bath",
@@ -513,7 +723,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "an-bath-1", text: "浴室全体（天井・壁・床・ドア・換気扇カバー）をカビ取り剤＋中性洗剤で徹底的に掃除" },
           { id: "an-bath-2", text: "洗濯機の分解クリーニングが必要なら、業者クリーニングを検討" },
         ],
-        tools: ["カビ取り剤", "中性洗剤", "ブラシ", "スポンジ", "脚立", "ゴム手袋", "マスク"]
+        tools: ["カビ取り剤", "中性洗剤", "ブラシ", "スポンジ", "脚立", "ゴム手袋", "マスク"],
+        infographics: {
+          annual: {
+            src: "/infographics/annual/an-bath.jpg",
+            alt: "年1の最短攻略図：浴室",
+            label: "最短攻略図（年1）"
+          }
+        }
       },
       {
         id: "an-toilet",
@@ -524,7 +741,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
         tasks: [
           { id: "an-toilet-1", text: "トイレ全体（タンク内含む）を大掃除し、黄ばみ・黒ずみ・水垢を徹底除去" },
         ],
-        tools: ["トイレ用強力洗剤", "カビ取り剤", "中性洗剤", "ブラシ", "手袋", "マスク"]
+        tools: ["トイレ用強力洗剤", "カビ取り剤", "中性洗剤", "ブラシ", "手袋", "マスク"],
+        infographics: {
+          annual: {
+            src: "/infographics/annual/an-toilet.jpg",
+            alt: "年1の最短攻略図：トイレ",
+            label: "最短攻略図（年1）"
+          }
+        }
       },
       {
         id: "an-living",
@@ -537,7 +761,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "an-liv-2", text: "壁の黒ずみ・手あかが気になる箇所を、メラミンスポンジなどでやさしくこすってリセット" },
           { id: "an-liv-3", text: "1年を通して増えた書類・ガジェット類の「総仕分け」" },
         ],
-        tools: ["掃除機", "メラミンスポンジ", "ハンディモップ", "ゴミ袋", "ダンボール"]
+        tools: ["掃除機", "メラミンスポンジ", "ハンディモップ", "ゴミ袋", "ダンボール"],
+        infographics: {
+          annual: {
+            src: "/infographics/annual/an-living.jpg",
+            alt: "年1の最短攻略図：リビング",
+            label: "最短攻略図（年1）"
+          }
+        }
       },
       {
         id: "an-entrance",
@@ -549,7 +780,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "an-ent-1", text: "玄関ドアの外側・ポストをまとめて洗浄" },
           { id: "an-ent-2", text: "ベランダ全体を水洗い" },
         ],
-        tools: ["中性洗剤", "ブラシ", "バケツ", "ホース", "高圧洗浄機"]
+        tools: ["中性洗剤", "ブラシ", "バケツ", "ホース", "高圧洗浄機"],
+        infographics: {
+          annual: {
+            src: "/infographics/annual/an-entrance.jpg",
+            alt: "年1の最短攻略図：玄関・ベランダ",
+            label: "最短攻略図（年1）"
+          }
+        }
       },
       {
         id: "an-other",
@@ -561,7 +799,14 @@ export const CLEANING_DATA: ScheduleCategory[] = [
           { id: "an-oth-1", text: "エアコン内部クリーニングを業者に依頼" },
           { id: "an-oth-2", text: "1年分の不要品を洗い出し、粗大ゴミ回収やフリマアプリで処分" },
         ],
-        tools: ["ゴミ袋", "粗大ゴミ用シール", "軍手", "電池"]
+        tools: ["ゴミ袋", "粗大ゴミ用シール", "軍手", "電池"],
+        infographics: {
+          annual: {
+            src: "/infographics/annual/an-other.jpg",
+            alt: "年1の最短攻略図：その他",
+            label: "最短攻略図（年1）"
+          }
+        }
       }
     ]
   }

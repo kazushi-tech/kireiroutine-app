@@ -499,34 +499,31 @@ const SchedulePage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* tasks - 折りたたみ式 */}
-                    <details className="group">
-                      <summary className="flex items-center justify-between cursor-pointer list-none py-2 text-sm font-medium text-slate-700">
-                        <span>📋 タスク一覧（{section.tasks.length}件）</span>
-                        <ChevronDown className="h-4 w-4 text-slate-400 group-open:rotate-180 transition-transform" />
-                      </summary>
-                      <ul className="space-y-2 pt-2">
-                        {section.tasks.map((task) => {
-                          const checked = !!completedTasks[task.id];
-                          return (
-                            <li key={task.id}>
-                              <button
-                                type="button"
-                                onClick={() => handleToggleTask(task.id)}
-                                className="flex w-full items-start gap-2 text-left text-sm text-slate-800"
-                              >
-                                {checked ? (
-                                  <CheckCircle2 className="mt-[1px] h-4 w-4 flex-shrink-0 text-orange-500" />
-                                ) : (
-                                  <Circle className="mt-[1px] h-4 w-4 flex-shrink-0 text-slate-300" />
-                                )}
-                                <span>{task.text}</span>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </details>
+                    {/* 要点チップ */}
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-medium text-orange-700">
+                        {frequencyLabelMap[activeFrequency]}
+                      </span>
+                      {manual?.durationText && (
+                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                          目安 {manual.durationText}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                        {section.tasks.length}ステップ
+                      </span>
+                    </div>
+
+                    {/* 攻略図導線（infographicsがある場合のみ） */}
+                    {(section.infographics?.weekly || section.infographics?.biweekly || section.infographics?.monthly || section.infographics?.quarterly || section.infographics?.semiannual || section.infographics?.annual) && hasManual && (
+                      <Link
+                        to={`/section/${section.id}#infographic`}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-orange-300 bg-white px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-50 transition-colors"
+                        aria-label={`${section.areaName}の最短攻略図を見る`}
+                      >
+                        📋 攻略図を見る
+                      </Link>
+                    )}
 
                     {/* tools hint */}
                     {section.tools && section.tools.length > 0 && (
