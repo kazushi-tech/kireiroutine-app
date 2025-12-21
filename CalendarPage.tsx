@@ -351,6 +351,16 @@ const CalendarPage: React.FC = () => {
   const selectedKey = selectedDate ? formatDateKey(selectedDate) : todayKey;
   const tasksForSelectedDay = calendarMap[selectedKey] ?? [];
 
+  // calendarMapが更新されたときに、選択中の日付のタスクリストをselectedTaskIdsに同期
+  useEffect(() => {
+    const key = selectedDate ? formatDateKey(selectedDate) : todayKey;
+    const currentTasks = calendarMap[key] ?? [];
+    // モーダルが閉じているときのみ同期（モーダル中の編集を妨げないため）
+    if (!isEditorOpen) {
+      setSelectedTaskIds(currentTasks);
+    }
+  }, [calendarMap, selectedDate, isEditorOpen, todayKey]);
+
   const filteredTasks = useMemo(() => {
     if (repeatType !== "once") {
       return CALENDAR_TASKS.filter((task) => task.repeatType === repeatType);
@@ -498,12 +508,10 @@ const CalendarPage: React.FC = () => {
         ? selectedTaskIds
         : selectedTaskIds.filter((id) => filteredTaskIds.includes(id));
 
-    const key = formatDateKey(selectedDate);
     const newMap = applyTasksWithRepeat(selectedDate, repeatType, tasksToPersist, calendarMap);
     setCalendarMap(newMap);
-    // Update selectedTaskIds to reflect saved tasks
-    setSelectedTaskIds(newMap[key] ?? []);
     setIsEditorOpen(false);
+    // selectedTaskIdsはuseEffectで自動更新される
   };
 
   const handleClearDay = () => {
@@ -511,9 +519,8 @@ const CalendarPage: React.FC = () => {
     const key = formatDateKey(selectedDate);
     const newMap = clearDateTasks(calendarMap, key);
     setCalendarMap(newMap);
-    // Update selectedTaskIds to reflect cleared day
-    setSelectedTaskIds(newMap[key] ?? []);
     setIsEditorOpen(false);
+    // selectedTaskIdsはuseEffectで自動更新される
   };
 
   // Rescheduling Logic
