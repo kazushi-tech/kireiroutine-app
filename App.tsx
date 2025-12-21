@@ -19,7 +19,7 @@ const App: React.FC = () => {
   // タブ状態管理
   const getInitialTab = (): TabType => {
     if (location.pathname === '/calendar') return 'calendar';
-    if (location.pathname === '/guide') return 'guide';
+    if (location.pathname === '/' || location.pathname === '/guide') return 'guide';
     return 'home';
   };
   
@@ -30,9 +30,9 @@ const App: React.FC = () => {
     if (tab === 'calendar') {
       navigate('/calendar');
     } else if (tab === 'guide') {
-      navigate('/guide');
-    } else {
       navigate('/');
+    } else {
+      navigate('/home');
     }
   };
 
@@ -47,10 +47,10 @@ const App: React.FC = () => {
       <ScrollToTop />
       
       <Routes>
-        <Route path="/" element={<SchedulePage />} />
+        <Route path="/" element={<GuidePage />} />
+        <Route path="/home" element={<SchedulePage />} />
         <Route path="/list" element={<SchedulePage />} />
         <Route path="/schedule" element={<SchedulePage />} />
-        <Route path="/guide" element={<GuidePage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/section/:sectionId" element={<SectionDetailPage />} />
       </Routes>
