@@ -1,27 +1,8 @@
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  useDroppable,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CLEANING_DATA, FREQUENCY_SUMMARY_META } from "./constants";
 import { Frequency } from "./types";
-import { Brush, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import {
   CalendarMap,
   clearDateTasks,
@@ -296,10 +277,10 @@ const CalendarPage: React.FC = () => {
   const [bulkFrequencyId, setBulkFrequencyId] = useState<Frequency | null>(null);
   const [bulkSelectedDates, setBulkSelectedDates] = useState<Set<string>>(new Set());
 
-  // モーダル表示中はbodyスクロールを防止し、タブバーを隠す（iOS Safari対策込み）
+  // モーダル表示中はbodyスクロールを防止し、タブバーを隠す（iOS Safari対策・統合版）
   useEffect(() => {
     if (isEditorOpen) {
-      // iPhone Safari対策: 現在のスクロール位置を保存してbodyを固定
+      // 現在のスクロール位置を保存してbodyを固定
       const scrollY = window.scrollY;
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
@@ -307,7 +288,11 @@ const CalendarPage: React.FC = () => {
       document.body.style.right = '0';
       document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
       document.body.dataset.scrollY = String(scrollY);
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.overscrollBehavior = 'contain';
+      
       // タブバーを隠す
       const tabBar = document.querySelector('nav.fixed.bottom-0');
       if (tabBar) {
@@ -322,14 +307,20 @@ const CalendarPage: React.FC = () => {
       document.body.style.right = '';
       document.body.style.width = '';
       document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.overscrollBehavior = '';
       window.scrollTo(0, scrollY);
+      
       // タブバーを表示
       const tabBar = document.querySelector('nav.fixed.bottom-0');
       if (tabBar) {
         (tabBar as HTMLElement).style.display = '';
       }
     }
+    
     return () => {
+      // cleanup: 必ず元に戻す
       const scrollY = Number(document.body.dataset.scrollY || 0);
       document.body.style.position = '';
       document.body.style.top = '';
@@ -337,7 +328,11 @@ const CalendarPage: React.FC = () => {
       document.body.style.right = '';
       document.body.style.width = '';
       document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.overscrollBehavior = '';
       window.scrollTo(0, scrollY);
+      
       const tabBar = document.querySelector('nav.fixed.bottom-0');
       if (tabBar) {
         (tabBar as HTMLElement).style.display = '';
@@ -503,17 +498,21 @@ const CalendarPage: React.FC = () => {
         ? selectedTaskIds
         : selectedTaskIds.filter((id) => filteredTaskIds.includes(id));
 
-    setCalendarMap((prev) =>
-      applyTasksWithRepeat(selectedDate, repeatType, tasksToPersist, prev)
-    );
+    const key = formatDateKey(selectedDate);
+    const newMap = applyTasksWithRepeat(selectedDate, repeatType, tasksToPersist, calendarMap);
+    setCalendarMap(newMap);
+    // Update selectedTaskIds to reflect saved tasks
+    setSelectedTaskIds(newMap[key] ?? []);
     setIsEditorOpen(false);
   };
 
   const handleClearDay = () => {
     if (!selectedDate) return;
     const key = formatDateKey(selectedDate);
-    setCalendarMap((prev) => clearDateTasks(prev, key));
-    setSelectedTaskIds([]);
+    const newMap = clearDateTasks(calendarMap, key);
+    setCalendarMap(newMap);
+    // Update selectedTaskIds to reflect cleared day
+    setSelectedTaskIds(newMap[key] ?? []);
     setIsEditorOpen(false);
   };
 
@@ -562,28 +561,7 @@ const CalendarPage: React.FC = () => {
     setSelectedDate(today);
   };
 
-  // モーダル表示中は背景スクロールやタブバーへのタッチをブロック
-  useEffect(() => {
-    if (!isEditorOpen) return;
 
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalBodyTouch = document.body.style.touchAction;
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-    const originalHtmlOverscroll =
-      document.documentElement.style.overscrollBehavior;
-
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
-    document.documentElement.style.overflow = "hidden";
-    document.documentElement.style.overscrollBehavior = "contain";
-
-    return () => {
-      document.body.style.overflow = originalBodyOverflow;
-      document.body.style.touchAction = originalBodyTouch;
-      document.documentElement.style.overflow = originalHtmlOverflow;
-      document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
-    };
-  }, [isEditorOpen]);
 
   // Individual Rescheduling Logic
   const [reschedulingTaskId, setReschedulingTaskId] = useState<string | null>(null);
@@ -765,51 +743,7 @@ const CalendarPage: React.FC = () => {
     navigate("/", { state: { initialFrequency: freq } });
   };
 
-  // DnD Logic
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-
-    if (!over) return;
-
-    const taskId = active.id as string;
-    const overId = over.id as string; // This will be the date key
-
-    let sourceDateKey = "";
-    for (const [key, tasks] of Object.entries(calendarMap)) {
-      if (tasks.includes(taskId)) {
-        sourceDateKey = key;
-        break;
-      }
-    }
-
-    if (!sourceDateKey) return;
-    if (sourceDateKey === overId) return;
-
-    setCalendarMap((prev) =>
-      updateCalendarMap(prev, (draft) => {
-        draft[sourceDateKey] = draft[sourceDateKey].filter(
-          (id) => id !== taskId
-        );
-        if (draft[sourceDateKey].length === 0) delete draft[sourceDateKey];
-
-        const targetTasks = draft[overId] ?? [];
-        if (!targetTasks.includes(taskId)) {
-          draft[overId] = [...targetTasks, taskId];
-        }
-      })
-    );
-  };
 
   return (
     <main className="min-h-screen bg-[#f7f1e7] py-6 px-4 sm:px-6 page-content">
@@ -1636,89 +1570,6 @@ const CalendarPage: React.FC = () => {
     </main>
   );
 };
-
-// Sortable Task Item Component
-function SortableTaskItem({ task, isOverlay = false }: { task: CalendarTask; isOverlay?: boolean }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id, data: { task } });
-
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    opacity: isDragging ? 0.3 : 1,
-    zIndex: isDragging ? 999 : "auto",
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm shadow-sm cursor-grab active:cursor-grabbing touch-none ${
-        isOverlay
-          ? "bg-emerald-50 border-emerald-200 rotate-2 scale-105"
-          : "bg-white border-slate-100 hover:border-emerald-200"
-      }`}
-    >
-      <span className="text-xs sm:text-sm text-slate-700 truncate flex-1">
-        {task.label}
-      </span>
-      <span className="text-slate-300">:::</span>
-    </div>
-  );
-}
-
-// Droppable Day Component
-
-function DroppableDay({ day, isToday }: { day: any; isToday: boolean }) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: day.key,
-  });
-
-  const dateLabel = isToday
-    ? "今日"
-    : day.offset === 1
-    ? "明日"
-    : ["日", "月", "火", "水", "木", "金", "土"][day.date.getDay()] + "曜";
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`rounded-2xl border p-3 transition-colors ${
-        isOver ? "bg-emerald-50 border-emerald-300 ring-2 ring-emerald-200" : 
-        isToday ? "bg-emerald-50/30 border-emerald-100" : "bg-white border-slate-100"
-      }`}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs font-bold ${isToday ? "text-emerald-600" : "text-slate-500"}`}>
-          {dateLabel} <span className="text-[10px] font-normal text-slate-400 ml-1">{day.date.getMonth()+1}/{day.date.getDate()}</span>
-        </span>
-        <span className="text-[10px] text-slate-400">{day.tasks.length}件</span>
-      </div>
-      
-      <SortableContext items={day.tasks.map((t: any) => t.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-2 min-h-[20px]">
-          {day.tasks.length === 0 ? (
-            <div className="text-[10px] text-slate-300 text-center py-2 border-dashed border border-slate-100 rounded">
-              タスクなし
-            </div>
-          ) : (
-            day.tasks.map((task: any) => (
-              <SortableTaskItem key={task.id} task={task} />
-            ))
-          )}
-        </div>
-      </SortableContext>
-    </div>
-  );
-}
 
 export default CalendarPage;
 
